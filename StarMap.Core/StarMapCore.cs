@@ -12,8 +12,8 @@ namespace StarMap.Core
         private readonly Harmony _harmony = new("StarMap.Core");
         private readonly AssemblyLoadContext _coreAssemblyLoadContext;
 
-        private readonly LoadedModRepository _loadedMods;
-        public LoadedModRepository LoadedMods => _loadedMods;
+        private readonly ModLoader _loadedMods;
+        public ModLoader LoadedMods => _loadedMods;
 
         public StarMapCore(AssemblyLoadContext coreAssemblyLoadContext)
         {

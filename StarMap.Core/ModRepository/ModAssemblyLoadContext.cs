@@ -9,6 +9,8 @@ namespace StarMap.Core.ModRepository
         private readonly AssemblyLoadContext _coreAssemblyLoadContext;
         private readonly AssemblyDependencyResolver _modDependencyResolver;
 
+        public ModInformation? ModInfo { get; set; }
+
         public ModAssemblyLoadContext(string modId, string modDirectory, AssemblyLoadContext coreAssemblyContext)
             : base()
         {
@@ -21,7 +23,7 @@ namespace StarMap.Core.ModRepository
 
         protected override Assembly? Load(AssemblyName assemblyName)
         {
-            var existingInDefault = AssemblyLoadContext.Default.Assemblies
+            var existingInDefault = Default.Assemblies
                 .FirstOrDefault(a => string.Equals(a.GetName().Name, assemblyName.Name, StringComparison.OrdinalIgnoreCase));
             if (existingInDefault != null)
                 return existingInDefault;
@@ -41,6 +43,17 @@ namespace StarMap.Core.ModRepository
                 }
                 catch (FileNotFoundException)
                 {
+                }
+            }
+
+            if (ModInfo is ModInformation modInfo && modInfo.DependencyContexts.Count > 0)
+            {
+                foreach (var context in modInfo.DependencyContexts)
+                {
+                    var existsInDependencyContext = context.Assemblies
+                        .FirstOrDefault(a => string.Equals(a.GetName().Name, assemblyName.Name, StringComparison.OrdinalIgnoreCase));
+                    if (existsInDependencyContext != null)
+                        return existsInDependencyContext;
                 }
             }
 
