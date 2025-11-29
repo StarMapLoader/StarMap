@@ -1,38 +1,75 @@
 ﻿using KSA;
 using StarMap.API;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace StarMap.Core.ModRepository
 {
+    internal sealed class ModInformation
+    {
+        public required string ModId { get; init; }
+        public required ModAssemblyLoadContext ModAssemblyLoadContext { get; init; }
+        public required Type ModType { get; init; }
+        public bool Initialized { get; set; } = false;
+        public object? ModInstance { get; set; } = null;
+
+        public List<string> ExportedAssemblies { get; set; } = [];
+
+        public HashSet<ModAssemblyLoadContext> DependencyContexts = [];
+        public Dictionary<string, StarMapDependencyInfo> NotLoadedModDependencies = [];
+
+        public MethodInfo? BeforeMainAction { get; set; } = null;
+        public MethodInfo? PrepareSystemsAction { get; set; } = null;
+    }
+
     internal sealed class ModRegistry : IDisposable
     {
-        private readonly Dictionary<Type, List<(StarMapMethodAttribute attribute, object @object, MethodInfo method)>> _map = [];
-        private readonly Dictionary<string, (object @object, MethodInfo method)> _beforeMainActions = [];
-        private readonly Dictionary<string, (object @object, MethodInfo method)> _prepareSystemsActions = [];
+        private readonly Dictionary<string, ModInformation> _mods = [];
+        private readonly Dictionary<Type, List<(StarMapMethodAttribute attribute, object @object, MethodInfo method)>> _modMethods = [];
 
-        public void Add(string modId, StarMapMethodAttribute attribute, object @object, MethodInfo method)
+        public bool ModLoaded(string modId) => _mods.ContainsKey(modId);
+
+        public bool TryGetMod(string modId, [NotNullWhen(true)] out ModInformation? modInfo)
         {
-            var attributeType = attribute.GetType();
+            return _mods.TryGetValue(modId, out modInfo);
+        }
 
-            if (!_map.TryGetValue(attributeType, out var list))
+        public void Add(ModInformation modInfo)
+        {
+            _mods.Add(modInfo.ModId, modInfo);
+        }
+
+        public IEnumerable<ModInformation> GetMods()
+        {
+            return _mods.Values;
+        }
+
+
+        public void AddModMethod(string modId, StarMapMethodAttribute methodAttribute, object @object, MethodInfo method)
+        {
+            if (!_mods.TryGetValue(modId, out var modInfo)) return;
+
+            var attributeType = methodAttribute.GetType();
+
+            if (!_modMethods.TryGetValue(attributeType, out var list))
             {
                 list = [];
-                _map[attributeType] = list;
+                _modMethods[attributeType] = list;
             }
 
-            if (attribute.GetType() == typeof(StarMapBeforeMainAttribute))
-                _beforeMainActions[modId] = (@object, method);
+            if (methodAttribute.GetType() == typeof(StarMapBeforeMainAttribute))
+                modInfo.BeforeMainAction = method;
 
-            if (attribute.GetType() == typeof(StarMapImmediateLoadAttribute))
-                _prepareSystemsActions[modId] = (@object, method);
+            if (methodAttribute.GetType() == typeof(StarMapImmediateLoadAttribute))
+                modInfo.PrepareSystemsAction = method;
 
-            list.Add((attribute, @object, method));
+            list.Add((methodAttribute, @object, method));
         }
 
         public IReadOnlyList<(StarMapMethodAttribute attribute, object @object, MethodInfo method)> Get<TAttribute>()
             where TAttribute : Attribute
         {
-            if (_map.TryGetValue(typeof(TAttribute), out var list))
+            if (_modMethods.TryGetValue(typeof(TAttribute), out var list))
             {
                 return list.Cast<(StarMapMethodAttribute attribute, object @object, MethodInfo method)>().ToList();
             }
@@ -42,24 +79,14 @@ namespace StarMap.Core.ModRepository
 
         public IReadOnlyList<(StarMapMethodAttribute attribute, object @object, MethodInfo method)> Get(Type iface)
         {
-            return _map.TryGetValue(iface, out var list)
+            return _modMethods.TryGetValue(iface, out var list)
                 ? list
                 : Array.Empty<(StarMapMethodAttribute attribute, object @object, MethodInfo method)>();
         }
 
-        public (object @object, MethodInfo method)? GetBeforeMainAction(string modId)
-        {
-            return _beforeMainActions.TryGetValue(modId, out var action) ? action : null;
-        }
-
-        public (object @object, MethodInfo method)? GetPrepareSystemsAction(string modId)
-        {
-            return _prepareSystemsActions.TryGetValue(modId, out var action) ? action : null;
-        }
-
         public void Dispose()
         {
-            _map.Clear();
+            _modMethods.Clear();
         }
     }
 }

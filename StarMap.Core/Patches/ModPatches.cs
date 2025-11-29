@@ -1,5 +1,7 @@
 ﻿using HarmonyLib;
 using KSA;
+using StarMap.Core.ModRepository;
+using System.Reflection;
 
 namespace StarMap.Core.Patches
 {
