@@ -11,7 +11,7 @@
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(Configuration)' != 'Debug'">
-		<PackageReference Include="StarMap.KSA.Dummy" Version="1.0.10">
+		<PackageReference Include="StarMap.KSA.Dummy" Version="1.0.11">
 			<IncludeAssets>compile; build; analyzers</IncludeAssets>
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
