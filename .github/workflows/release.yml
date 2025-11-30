@@ -147,7 +147,10 @@ jobs:
                     /p:Version=${{ steps.version.outputs.new }} \
                     /p:AssemblyVersion=${{ steps.version.outputs.new }} \
                     /p:FileVersion=${{ steps.version.outputs.new }}
-                  dotnet nuget push ./nupkg/*.nupkg --source github --api-key "${{ secrets.GITHUB_TOKEN }}" --skip-duplicate
+                  dotnet nuget push ./nupkg/*.nupkg \
+                    --source https://api.nuget.org/v3/index.json \
+                    --api-key "${{ secrets.NUGET_API_KEY }}" \
+                    --skip-duplicate
 
             - name: Upload publish folder for Windows installer
               uses: actions/upload-artifact@v4
