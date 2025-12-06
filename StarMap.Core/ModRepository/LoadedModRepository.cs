@@ -150,11 +150,6 @@ namespace StarMap.Core.ModRepository
                 method.Invoke(@object, []);
             }
 
-            foreach (var modLoadContext in _modLoadContexts.Values)
-            {
-                modLoadContext.Unload();
-            }
-
             _mods.Dispose();
         }
     }
