@@ -10,7 +10,7 @@ namespace StarMap.Core.ModRepository
         private readonly AssemblyDependencyResolver _modDependencyResolver;
 
         public ModAssemblyLoadContext(string modId, string modDirectory, AssemblyLoadContext coreAssemblyContext)
-            : base(isCollectible: true)
+            : base()
         {
             _coreAssemblyLoadContext = coreAssemblyContext;
 

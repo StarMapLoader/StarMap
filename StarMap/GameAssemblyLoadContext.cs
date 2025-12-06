@@ -14,7 +14,7 @@ namespace StarMap
         private readonly AssemblyDependencyResolver _starMapDepdencyResolver;
 
         public GameAssemblyLoadContext(string gamePath)
-            : base(isCollectible: true)
+            : base()
         {
             _gameDependencyResolver = new AssemblyDependencyResolver(gamePath);
 
