@@ -46,14 +46,22 @@ namespace StarMap.Core.ModRepository
                 }
             }
 
-            if (ModInfo is ModInformation modInfo && modInfo.DependencyContexts.Count > 0)
+            if (ModInfo is ModInformation modInfo && modInfo.Dependencies.Count > 0)
             {
-                foreach (var context in modInfo.DependencyContexts)
+                foreach (var dependency in modInfo.Dependencies)
                 {
-                    var existsInDependencyContext = context.Assemblies
-                        .FirstOrDefault(a => string.Equals(a.GetName().Name, assemblyName.Name, StringComparison.OrdinalIgnoreCase));
-                    if (existsInDependencyContext != null)
-                        return existsInDependencyContext;
+                    if (dependency.ModId == assemblyName.Name || dependency.ExportedAssemblies.Contains(assemblyName.Name ?? string.Empty))
+                    {
+                        try
+                        {
+                            var asm = dependency.ModAssemblyLoadContext.LoadFromAssemblyName(assemblyName);
+                            if (asm != null)
+                                return asm;
+                        }
+                        catch (FileNotFoundException)
+                        {
+                        }
+                    }
                 }
             }
 
