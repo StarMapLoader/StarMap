@@ -13,9 +13,9 @@ namespace StarMap.Core.ModRepository
         public bool Initialized { get; set; } = false;
         public object? ModInstance { get; set; } = null;
 
-        public List<string> ExportedAssemblies { get; set; } = [];
+        public HashSet<string> ExportedAssemblies { get; set; } = [];
 
-        public HashSet<ModAssemblyLoadContext> DependencyContexts = [];
+        public HashSet<ModInformation> Dependencies = [];
         public Dictionary<string, StarMapDependencyInfo> NotLoadedModDependencies = [];
 
         public MethodInfo? BeforeMainAction { get; set; } = null;

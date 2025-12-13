@@ -154,7 +154,7 @@ namespace StarMap.Core.ModRepository
                         }
                         else
                         {
-                            modInfo.DependencyContexts.Add(modDependency.ModAssemblyLoadContext);
+                            modInfo.Dependencies.Add(modDependency);
                         }
                     }
                 }
@@ -179,7 +179,7 @@ namespace StarMap.Core.ModRepository
             {
                 foreach(var modDependent in modDependents)
                 {
-                    modDependent.DependencyContexts.Add(modInfo.ModAssemblyLoadContext);
+                    modDependent.Dependencies.Add(modInfo);
                     if (modDependent.NotLoadedModDependencies.Remove(modInfo.ModId) && modDependent.NotLoadedModDependencies.Count == 0)
                     {
                         _waitingMods.Remove(modDependent);
@@ -236,7 +236,8 @@ namespace StarMap.Core.ModRepository
                 object? value = dependencyProperty.GetValue(null); // null because static
                 if (value is string[] exportedAssemblies)
                 {
-                    modInfo.ExportedAssemblies.AddRange(exportedAssemblies);
+                    foreach (var assembly in exportedAssemblies)
+                        modInfo.ExportedAssemblies.Add(assembly);
                 }
             }
 
@@ -253,8 +254,6 @@ namespace StarMap.Core.ModRepository
 
         public void OnAllModsLoaded()
         {
-
-
             foreach (var (_, @object, method) in _modRegistry.Get<StarMapAllModsLoadedAttribute>())
             {
                 method.Invoke(@object, []);
