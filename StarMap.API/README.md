@@ -14,3 +14,4 @@ Any method within this class that has any of the attributes will used, so if two
 -   StarMapUnload: Called when KSA is unloaded.
 -   StarMapBeforeGui: Called just before KSA starts drawing its Ui.
 -   StarMapAfterGui: Called after KSA has drawn its Ui.
+-   StarMapAfterOnFrame: Called after KSA calls Program.OnFrame
