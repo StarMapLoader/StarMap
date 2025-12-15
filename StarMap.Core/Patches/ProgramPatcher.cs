@@ -8,6 +8,7 @@ namespace StarMap.Core.Patches
     internal static class ProgramPatcher
     {
         private const string OnDrawUiMethodName = "OnDrawUi";
+        private const string OnFrameMethodName = "OnFrame";
 
         [HarmonyPatch(OnDrawUiMethodName)]
         [HarmonyPrefix]
@@ -30,6 +31,18 @@ namespace StarMap.Core.Patches
             foreach (var (_, @object, method) in methods)
             {
                 method.Invoke(@object, [dt]);
+            }
+        }
+
+        [HarmonyPatch(OnFrameMethodName)]
+        [HarmonyPostfix]
+        public static void AfterOnFrame(double currentPlayerTime, double dtPlayer)
+        {
+            var methods = StarMapCore.Instance?.LoadedMods.Mods.Get<StarMapAfterOnFrameAttribute>() ?? [];
+
+            foreach (var (_, @object, method) in methods)
+            {
+                method.Invoke(@object, new object[] { currentPlayerTime, dtPlayer });
             }
         }
     }

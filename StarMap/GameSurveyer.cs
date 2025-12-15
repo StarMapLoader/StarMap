@@ -57,7 +57,6 @@ namespace StarMap
 
         public void Dispose()
         {
-            _gameAssemblyContext.Unload();
             _core?.DeInit();
         }
     }
