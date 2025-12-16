@@ -8,6 +8,9 @@
 
   <ItemGroup>
     <PackageReference Include="Lib.Harmony" Version="2.4.2" />
+	  <PackageReference Include="Samboy063.Tomlet" Version="6.1.0">
+		  <ExcludeAssets>runtime</ExcludeAssets>
+	  </PackageReference>
   </ItemGroup>
 
   <ItemGroup>

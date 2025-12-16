@@ -1,7 +1,9 @@
 ﻿using KSA;
 using StarMap.API;
+using StarMap.Core.Config;
 using System.Reflection;
 using System.Runtime.Loader;
+using Tomlet;
 
 namespace StarMap.Core.ModRepository
 {
@@ -61,8 +63,11 @@ namespace StarMap.Core.ModRepository
             foreach (var mod in mods)
             {
                 var modPath = Path.Combine(path, mod.Id);
+                var starMapConfig = TomletMain.To<RootConfig>(File.ReadAllText(Path.Combine(modPath, "mod.toml")));
+                if (starMapConfig.StarMap is null)
+                    continue;
 
-                if (!LoadMod(mod.Id, modPath))
+                if (!LoadMod(mod.Id, modPath, starMapConfig.StarMap))
                 {
                     continue;
                 }
@@ -104,10 +109,11 @@ namespace StarMap.Core.ModRepository
                 {
                     Console.WriteLine($"StarMap - Failed to load mod:{waitingMod.ModId} after all mods were loaded, missing mods (some may be optional): {string.Join(",", waitingMod.NotLoadedModDependencies.Values.Select(mod => mod.ModId))}");
                 }
+                _waitingMods.Clear();
             }
         }
 
-        private bool LoadMod(string modId, string modDirectory)
+        private bool LoadMod(string modId, string modDirectory, StarMapConfig config)
         {
             var fullPath = Path.GetFullPath(modDirectory);
             var modAssemblyFile = Path.Combine(fullPath, $"{modId}.dll");
@@ -124,39 +130,33 @@ namespace StarMap.Core.ModRepository
             var modInfo = new ModInformation() {
                 ModId = modId,
                 ModAssemblyLoadContext = modLoadContext,
-                ModType = modClass
+                ModType = modClass,
+                Config = config,
             };
 
-            modLoadContext.ModInfo = modInfo;
+            foreach(var exportedAssembly in config.ExportedAssemblies)
+            {
+                modInfo.ExportedAssemblies.Add(exportedAssembly);
+            }
 
+            modLoadContext.ModInfo = modInfo;
             _modRegistry.Add(modInfo);
 
-            var dependencyPropertyField = modClass
-                .GetProperties(BindingFlags.Public | BindingFlags.Static)
-                .FirstOrDefault(prop => prop.GetCustomAttributes().Any(attr => attr.GetType().Name == typeof(StarMapDependenciesAttribute).Name));
-            
-            if (dependencyPropertyField is PropertyInfo dependencyProperty)
+            foreach (var dependency in config.ModDependencies)
             {
-                object? value = dependencyProperty.GetValue(null); // null because static
-                if (value is StarMapDependencyInfo[] dependencies)
+                if (!_modRegistry.TryGetMod(dependency.ModId, out var modDependency))
                 {
-                    foreach (var dependency in dependencies)
+                    modInfo.NotLoadedModDependencies.Add(dependency.ModId, dependency);
+                    if (!_modDependencyGraph.TryGetValue(dependency.ModId, out var dependents))
                     {
-                        if (!_modRegistry.TryGetMod(dependency.ModId, out var modDependency))
-                        {
-                            modInfo.NotLoadedModDependencies.Add(dependency.ModId, dependency);
-                            if (!_modDependencyGraph.TryGetValue(dependency.ModId, out var dependents))
-                            {
-                                dependents = [];
-                                _modDependencyGraph[dependency.ModId] = dependents;
-                            }
-                            dependents.Add(modInfo);
-                        }
-                        else
-                        {
-                            modInfo.Dependencies.Add(modDependency);
-                        }
+                        dependents = [];
+                        _modDependencyGraph[dependency.ModId] = dependents;
                     }
+                    dependents.Add(modInfo);
+                }
+                else
+                {
+                    modInfo.Dependencies.Add(modDependency, [.. dependency.ImportedAssemblies]);
                 }
             }
 
@@ -179,7 +179,8 @@ namespace StarMap.Core.ModRepository
             {
                 foreach(var modDependent in modDependents)
                 {
-                    modDependent.Dependencies.Add(modInfo);
+                    var dependencyInfo = modDependent.NotLoadedModDependencies[modInfo.ModId];
+                    modDependent.Dependencies.Add(modInfo, [.. dependencyInfo.ImportedAssemblies]);
                     if (modDependent.NotLoadedModDependencies.Remove(modInfo.ModId) && modDependent.NotLoadedModDependencies.Count == 0)
                     {
                         _waitingMods.Remove(modDependent);
@@ -227,19 +228,8 @@ namespace StarMap.Core.ModRepository
                 }
             }
 
-            var exportedAssemblyAttribute = modInfo.ModType
-                .GetProperties(BindingFlags.Public | BindingFlags.Static)
-                .FirstOrDefault(prop => prop.GetCustomAttributes().Any(attr => attr.GetType().Name == typeof(StarMapExportedAssemblyAttribute).Name));
-
-            if (exportedAssemblyAttribute is PropertyInfo dependencyProperty)
-            {
-                object? value = dependencyProperty.GetValue(null); // null because static
-                if (value is string[] exportedAssemblies)
-                {
-                    foreach (var assembly in exportedAssemblies)
-                        modInfo.ExportedAssemblies.Add(assembly);
-                }
-            }
+            foreach (var assembly in modInfo.Config?.ExportedAssemblies ?? [])
+                modInfo.ExportedAssemblies.Add(assembly);
 
             return true;
         }

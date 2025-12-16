@@ -17,21 +17,5 @@ Any method within this class that has any of the attributes will used, so if two
 
 ## Dependencies
 
-Mods can define what mods they define on, as well as what assemblies they want to export themselves.
-This only falls on assembly loading and load order within StarMap.
-If a mod is set as a dependency, and it is present, it will be loaded before the mods that depends on it.
-The dependent mod can then access any assembly that the dependency exposes, in addition to the main mod assembly, which is always exposed.
-
-This requires following attributes:
-
--   StarMapDependenciesAttribute: Describes what mods this mod dependends on.
-
-    -   This attribute should be placed on a static property that returns an array of StarMapDependencyInfo.
-    -   The StarMapDependencyInfo provides info on the mod id of the mod that should be depended on, and if this dependency is optional.
-    -   When a dependency is not optional, the mod will not be loaded when the dependency is not present.
-    -   When a dependency is optional, the mod is loaded after all other mods are loaded, to ensure the dependency can be loaded before.
-
--   StarMapExportedAssemblyAttribute: Describes what assemblies are exposed by the mod.
-    -   This attribute should be placed on a static property that returns an array of strings.
-    -   The string should be the name of the assembly, with no ".dll" suffix.
-    -   The main mod assembly (modid.dll) is always exposed, so this is only for other assemblies that other mods could depend on.
+Mods can define what mods they depend on, and what assemblies they want to import from that mod.
+They can as well define what assemblies they want exported to other mods.
