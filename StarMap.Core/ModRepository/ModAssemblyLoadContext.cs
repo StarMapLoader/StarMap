@@ -48,13 +48,34 @@ namespace StarMap.Core.ModRepository
 
             if (ModInfo is ModInformation modInfo && modInfo.Dependencies.Count > 0)
             {
-                foreach (var dependency in modInfo.Dependencies)
+                foreach (var (dependencyInfo, importedAssemblies) in modInfo.Dependencies)
                 {
-                    if (dependency.ModId == assemblyName.Name || dependency.ExportedAssemblies.Contains(assemblyName.Name ?? string.Empty))
+                    bool ShouldTryLoad()
+                    {
+                        var hasExportedAssemblies = dependencyInfo.ExportedAssemblies.Count > 0;
+                        var hasImportedAssemblies = importedAssemblies.Count > 0;
+
+                        if (!hasImportedAssemblies && !hasExportedAssemblies) {
+                            if (dependencyInfo.Config.EntryAssembly == assemblyName.Name)
+                                return true;
+
+                            return false;
+                        }
+
+                        if (hasExportedAssemblies && !dependencyInfo.ExportedAssemblies.Contains(assemblyName.Name ?? string.Empty))
+                            return false;
+
+                        if (hasImportedAssemblies && !importedAssemblies.Contains(assemblyName.Name ?? string.Empty))
+                            return false;
+
+                        return true;
+                    }
+
+                    if (ShouldTryLoad())
                     {
                         try
                         {
-                            var asm = dependency.ModAssemblyLoadContext.LoadFromAssemblyName(assemblyName);
+                            var asm = dependencyInfo.ModAssemblyLoadContext.LoadFromAssemblyName(assemblyName);
                             if (asm != null)
                                 return asm;
                         }

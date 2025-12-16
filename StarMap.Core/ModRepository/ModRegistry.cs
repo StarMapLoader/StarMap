@@ -1,5 +1,6 @@
 ﻿using KSA;
 using StarMap.API;
+using StarMap.Core.Config;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
@@ -10,13 +11,15 @@ namespace StarMap.Core.ModRepository
         public required string ModId { get; init; }
         public required ModAssemblyLoadContext ModAssemblyLoadContext { get; init; }
         public required Type ModType { get; init; }
+        public required StarMapConfig Config { get; init; }
+
         public bool Initialized { get; set; } = false;
         public object? ModInstance { get; set; } = null;
 
         public HashSet<string> ExportedAssemblies { get; set; } = [];
+        public Dictionary<ModInformation, HashSet<string>> Dependencies { get; set; } = [];
+        public Dictionary<string, StarMapModDependency> NotLoadedModDependencies { get; set; } = [];
 
-        public HashSet<ModInformation> Dependencies = [];
-        public Dictionary<string, StarMapDependencyInfo> NotLoadedModDependencies = [];
 
         public MethodInfo? BeforeMainAction { get; set; } = null;
         public MethodInfo? PrepareSystemsAction { get; set; } = null;
