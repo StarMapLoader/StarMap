@@ -38,7 +38,7 @@ namespace StarMap.Core.Patches
         [HarmonyPostfix]
         public static void AfterOnFrame(double currentPlayerTime, double dtPlayer)
         {
-            var methods = StarMapCore.Instance?.LoadedMods.Mods.Get<StarMapAfterOnFrameAttribute>() ?? [];
+            var methods = StarMapCore.Instance?.Loader.ModRegistry.Get<StarMapAfterOnFrameAttribute>() ?? [];
 
             foreach (var (_, @object, method) in methods)
             {
