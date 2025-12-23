@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
@@ -14,7 +14,9 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(Configuration)' == 'Debug'">
-        <Reference Include="..\..\Import\KSA.dll" />
+      <Reference Include="..\..\Import\KSA.dll" />
+      <Reference Include="..\..\Import\Brutal.Vulkan.dll" />
+      <Reference Include="..\..\Import\Brutal.Vulkan.Abstractions.dll" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(Configuration)' != 'Debug'">

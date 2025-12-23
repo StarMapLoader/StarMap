@@ -363,3 +363,6 @@ MigrationBackup/
 FodyWeavers.xsd
 
 installer/dist
+
+# Game DLLs used for local building
+Import/
