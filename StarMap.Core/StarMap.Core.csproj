@@ -23,7 +23,7 @@
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(Configuration)' != 'Debug'">
-		<PackageReference Include="StarMap.KSA.Dummy" Version="1.0.12">
+		<PackageReference Include="StarMap.KSA.Dummy" Version="1.0.13">
 			<ExcludeAssets>runtime</ExcludeAssets>
 		</PackageReference>
 	</ItemGroup>
