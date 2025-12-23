@@ -1,5 +1,7 @@
 ﻿using HarmonyLib;
 using KSA;
+using StarMap.Core.ModRepository;
+using System.Reflection;
 
 namespace StarMap.Core.Patches
 {
@@ -10,7 +12,13 @@ namespace StarMap.Core.Patches
         [HarmonyPrefix]
         public static void OnLoadMod(this Mod __instance)
         {
-            StarMapCore.Instance?.LoadedMods.ModPrepareSystems(__instance);
+            var modRegistry = StarMapCore.Instance?.Loader.ModRegistry;
+            if (modRegistry is not ModRegistry registry) return;
+
+            if (registry.TryGetMod(__instance.Id, out var modInfo) && modInfo.PrepareSystemsAction is MethodInfo action)
+            {
+                action.Invoke(modInfo.ModInstance, [__instance]);
+            }
         }
     }
 }

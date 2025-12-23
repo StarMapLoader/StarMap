@@ -14,7 +14,7 @@ namespace StarMap.Core.Patches
         [HarmonyPrefix]
         public static void BeforeOnDrawUi(double dt)
         {
-            var methods = StarMapCore.Instance?.LoadedMods.Mods.Get<StarMapBeforeGuiAttribute>() ?? [];
+            var methods = StarMapCore.Instance?.Loader.ModRegistry.Get<StarMapBeforeGuiAttribute>() ?? [];
 
             foreach (var (_, @object, method) in methods)
             {
@@ -26,7 +26,7 @@ namespace StarMap.Core.Patches
         [HarmonyPostfix]
         public static void AfterOnDrawUi(double dt)
         {
-            var methods = StarMapCore.Instance?.LoadedMods.Mods.Get<StarMapAfterGuiAttribute>() ?? [];
+            var methods = StarMapCore.Instance?.Loader.ModRegistry.Get<StarMapAfterGuiAttribute>() ?? [];
 
             foreach (var (_, @object, method) in methods)
             {
@@ -38,7 +38,7 @@ namespace StarMap.Core.Patches
         [HarmonyPostfix]
         public static void AfterOnFrame(double currentPlayerTime, double dtPlayer)
         {
-            var methods = StarMapCore.Instance?.LoadedMods.Mods.Get<StarMapAfterOnFrameAttribute>() ?? [];
+            var methods = StarMapCore.Instance?.Loader.ModRegistry.Get<StarMapAfterOnFrameAttribute>() ?? [];
 
             foreach (var (_, @object, method) in methods)
             {
