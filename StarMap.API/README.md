@@ -207,3 +207,16 @@ It is called just after the `KSA.Program.OnDrawUi` method.
 [StarMapAfterGui]
 public void ModMethod(double dt)
 ```
+
+#### StarMapAfterOnFrame
+
+Namespace: `StarMap.API`  
+Assembly: `StarMap.API`  
+Target: Method
+
+Methods marked with this attribute will be called after `KSA.Program.OnFrame` is called.
+
+```csharp
+[StarMapAfterOnFrame]
+public void ModMethod(double currentPlayerTime, double dtPlayer);
+```
