@@ -14,10 +14,10 @@ Every mod will at minimum contain a mod.toml (which is also the case for KSA mod
 While it is not stricly neccesary, it is adviced to add StarMap info to the mod.toml, at its most basic, a mod.toml should like like this:
 
 ```toml
-name = "StarMap.SimpleMod"
+name = "MyAmazingMod"
 
 [StarMap]
-EntryAssembly = "StarMap.SimpleMod"
+EntryAssembly = "MyAmazingMod"
 ```
 
 The name will be the modid of your mod, this should be the same name as the folder in which this lives in the Content folder.  
@@ -44,12 +44,12 @@ First of all, mods can configure what assemblies should be exposed to other mods
 In below example, only the StarMap.SimpleMod.Dependency(.dll) assembly will be accessable from other mods (more info in [imported and exported assemblies](#imported-and-exported-assemblies)).
 
 ```toml
-name = "StarMap.SimpleMod2"
+name = "MyOtherAmazingMod"
 
 [StarMap]
-EntryAssembly = "StarMap.SimpleMod2"
+EntryAssembly = "MyOtherAmazingMod"
 ExportedAssemblies = [
-	"StarMap.SimpleMod.Dependency"
+	"MyDependency"
 ]
 ```
 
@@ -58,16 +58,16 @@ ExportedAssemblies = [
 Then, mods can define what mods they want to define on, they can do this by adding a new ModDependencies list entry in the mod.toml
 
 ```toml
-name = "StarMap.SimpleMod"
+name = "MyAmazingMod"
 
 [StarMap]
-EntryAssembly = "StarMap.SimpleMod"
+EntryAssembly = "MyAmazingMod"
 
 [[StarMap.ModDependencies]]
-ModId = "StarMap.SimpleMod2"
+ModId = "MyOtherAmazingMod"
 Optional = false
 ImportedAssemblies = [
-    "StarMap.SimpleMod.Dependency"
+    "MyDependency"
 ]
 ```
 
