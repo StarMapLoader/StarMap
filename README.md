@@ -15,7 +15,7 @@ It makes use of Assembly Load Contexts to ensure mod dependencies are managed se
 
 ## Mod location
 
-Mods should be installed in the mods folder in the KSA installation, any KSA mod that has a dll with the same name as the mod that impelements the IStarMapMod interface will be loaded.
+Mods should be installed in the contents folder in the KSA installation, StarMap makes use of the
 
 ## Mod creation
 
