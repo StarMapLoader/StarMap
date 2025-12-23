@@ -11,7 +11,7 @@ Every mod will at minimum contain a mod.toml (which is also the case for KSA mod
 
 #### mod.toml
 
-While it is not stricly neccesary, it is adviced to add StarMap info to the mod.toml, at its most basic, a mod.toml should like like this:
+While it is not stricly neccesary, it is advised to add StarMap info to the mod.toml, at its most basic, a mod.toml should like like this:
 
 ```toml
 name = "MyAmazingMod"
@@ -55,7 +55,7 @@ ExportedAssemblies = [
 
 #### Mod dependency
 
-Then, mods can define what mods they want to define on, they can do this by adding a new ModDependencies list entry in the mod.toml
+Then, mods can define what mods they want to depend on, they can do this by adding a new ModDependencies list entry in the mod.toml
 
 ```toml
 name = "MyAmazingMod"
@@ -74,9 +74,9 @@ ImportedAssemblies = [
 In above example, it is provided that StarMap.SimpleMod wants to depend on StarMap.SimpleMod2, this dependency is not optional and the mod wants to access the StarMap.SimpleMod.Dependency assembly.  
 Following fields can be used
 
--   The ModId should be the same as is provided as the name field in the mod.toml of the dependency mod.
--   The optional field (default false) defines if this dependency is optional, more info in the [loading strategy](#dependency-loading-strategy)
--   The ImportedAssemblies field contains a list of assemblies that this mod intends to use from the dependency (more info in [imported and exported assemblies](#imported-and-exported-assemblies)).
+-   The `ModId` should be the same as is provided as the name field in the mod.toml of the dependency mod.
+-   The `Optional` field (default false) defines if this dependency is optional, more info in the [loading strategy](#dependency-loading-strategy)
+-   The `ImportedAssemblies` field contains a list of assemblies that this mod intends to use from the dependency (more info in [imported and exported assemblies](#imported-and-exported-assemblies)).
 
 #### Imported and exported assemblies
 
@@ -84,7 +84,7 @@ The goal of the imported and exported assembly fields is to compile a list of as
 
 -   If both fields are not filled in, the list will contain the entry assembly of the dependency.
 -   If only 1 of the lists is filled in, it will use this list to provide the assemblies.
--   If both lists are defined, the intersect of the two will be used.
+-   If both lists are defined, the intersection of the two will be used.
 
 ## Mod loading strategy
 
@@ -98,7 +98,7 @@ Once the mod is fully loaded, it will call the StarMapBeforeMain method, if ther
 Now that the mod has been loaded, it checks the list of mods that are waiting for dependencies, and if there are any that are waiting for this mod. If so, it removes itself from the waiting dependencies and checks if the mod can now be loaded, if so, the mod is loaded and the StarMapBeforeMain of that mod is called.
 
 It does this for all the mods in the manifest.  
-Once it has tried loading all the mods, it gets the mods that are stil waiting and checks them again.
+Once it has tried loading all the mods, it gets the mods that are still waiting and checks them again.
 If for a waiting mod, all its dependencies are optional, it will now load this mod. The implementation of the mod should ensure it can handle the optional dependency can be absent.  
 It keeps looping over the list of waiting mods until it has gone through the list once without being able to load a new mod, this indicates there are no more mods that can load with the provided mods, and gives up on loading these mods.
 
