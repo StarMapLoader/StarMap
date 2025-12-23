@@ -6,47 +6,30 @@ using System.Reflection;
 
 namespace StarMap.Core.ModRepository
 {
-    internal sealed class ModInformation
-    {
-        public required string ModId { get; init; }
-        public required ModAssemblyLoadContext ModAssemblyLoadContext { get; init; }
-        public required Type ModType { get; init; }
-        public required StarMapConfig Config { get; init; }
-
-        public bool Initialized { get; set; } = false;
-        public object? ModInstance { get; set; } = null;
-
-        public HashSet<string> ExportedAssemblies { get; set; } = [];
-        public Dictionary<ModInformation, HashSet<string>> Dependencies { get; set; } = [];
-        public Dictionary<string, StarMapModDependency> NotLoadedModDependencies { get; set; } = [];
-
-
-        public MethodInfo? BeforeMainAction { get; set; } = null;
-        public MethodInfo? PrepareSystemsAction { get; set; } = null;
-    }
-
     internal sealed class ModRegistry : IDisposable
     {
-        private readonly Dictionary<string, ModInformation> _mods = [];
+        public Dictionary<string, List<RuntimeMod>> WaitingModsDependencyGraph { get; } = [];
+        public HashSet<RuntimeMod> WaitingMods { get; } = [];
+
+        private readonly Dictionary<string, RuntimeMod> _mods = [];
         private readonly Dictionary<Type, List<(StarMapMethodAttribute attribute, object @object, MethodInfo method)>> _modMethods = [];
 
         public bool ModLoaded(string modId) => _mods.ContainsKey(modId);
 
-        public bool TryGetMod(string modId, [NotNullWhen(true)] out ModInformation? modInfo)
+        public bool TryGetMod(string modId, [NotNullWhen(true)] out RuntimeMod? modInfo)
         {
             return _mods.TryGetValue(modId, out modInfo);
         }
 
-        public void Add(ModInformation modInfo)
+        public void Add(RuntimeMod modInfo)
         {
             _mods.Add(modInfo.ModId, modInfo);
         }
 
-        public IEnumerable<ModInformation> GetMods()
+        public IEnumerable<RuntimeMod> GetMods()
         {
             return _mods.Values;
         }
-
 
         public void AddModMethod(string modId, StarMapMethodAttribute methodAttribute, object @object, MethodInfo method)
         {
