@@ -12,26 +12,26 @@ namespace StarMap.Core
         private readonly Harmony _harmony = new("StarMap.Core");
         private readonly AssemblyLoadContext _coreAssemblyLoadContext;
 
-        private readonly ModLoader _loadedMods;
-        public ModLoader LoadedMods => _loadedMods;
+        private readonly ModLoader _loader;
+        public ModLoader Loader => _loader;
 
         public StarMapCore(AssemblyLoadContext coreAssemblyLoadContext)
         {
             Instance = this;
             _coreAssemblyLoadContext = coreAssemblyLoadContext;
-            _loadedMods = new(_coreAssemblyLoadContext);
+            _loader = new(_coreAssemblyLoadContext);
         }
 
         public void Init()
         {
-            _loadedMods.Init();
+            _loader.Init();
             _harmony.PatchAll(typeof(StarMapCore).Assembly);
         }
 
         public void DeInit()
         {
             _harmony.UnpatchAll();
-            _loadedMods.Dispose();
+            _loader.Dispose();
         }
     }
 }

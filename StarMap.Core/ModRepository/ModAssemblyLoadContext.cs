@@ -9,15 +9,15 @@ namespace StarMap.Core.ModRepository
         private readonly AssemblyLoadContext _coreAssemblyLoadContext;
         private readonly AssemblyDependencyResolver _modDependencyResolver;
 
-        public ModInformation? ModInfo { get; set; }
+        public RuntimeMod? RuntimeMod { get; set; }
 
-        public ModAssemblyLoadContext(string modId, string modDirectory, AssemblyLoadContext coreAssemblyContext)
+        public ModAssemblyLoadContext(string modId, string entryAssemblyLocation, AssemblyLoadContext coreAssemblyContext)
             : base()
         {
             _coreAssemblyLoadContext = coreAssemblyContext;
 
             _modDependencyResolver = new AssemblyDependencyResolver(
-                Path.GetFullPath(Path.Combine(modDirectory, modId + ".dll"))
+                Path.GetFullPath(entryAssemblyLocation)
             );
         }
 
@@ -46,36 +46,15 @@ namespace StarMap.Core.ModRepository
                 }
             }
 
-            if (ModInfo is ModInformation modInfo && modInfo.Dependencies.Count > 0)
+            if (RuntimeMod is RuntimeMod modInfo && modInfo.Dependencies.Count > 0)
             {
-                foreach (var (dependencyInfo, importedAssemblies) in modInfo.Dependencies)
+                foreach (var (dependency, importedAssemblies) in modInfo.Dependencies)
                 {
-                    bool ShouldTryLoad()
-                    {
-                        var hasExportedAssemblies = dependencyInfo.ExportedAssemblies.Count > 0;
-                        var hasImportedAssemblies = importedAssemblies.Count > 0;
-
-                        if (!hasImportedAssemblies && !hasExportedAssemblies) {
-                            if (dependencyInfo.Config.EntryAssembly == assemblyName.Name)
-                                return true;
-
-                            return false;
-                        }
-
-                        if (hasExportedAssemblies && !dependencyInfo.ExportedAssemblies.Contains(assemblyName.Name ?? string.Empty))
-                            return false;
-
-                        if (hasImportedAssemblies && !importedAssemblies.Contains(assemblyName.Name ?? string.Empty))
-                            return false;
-
-                        return true;
-                    }
-
-                    if (ShouldTryLoad())
+                    if (importedAssemblies.Contains(assemblyName.Name ?? string.Empty))
                     {
                         try
                         {
-                            var asm = dependencyInfo.ModAssemblyLoadContext.LoadFromAssemblyName(assemblyName);
+                            var asm = dependency.ModAssemblyLoadContext.LoadFromAssemblyName(assemblyName);
                             if (asm != null)
                                 return asm;
                         }
