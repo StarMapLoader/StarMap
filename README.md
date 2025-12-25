@@ -15,11 +15,11 @@ It makes use of Assembly Load Contexts to ensure mod dependencies are managed se
 
 ## Mod location
 
-Mods should be installed in the contents folder in the KSA installation, StarMap makes use of the
+Mods should be installed in the contents folder in the KSA installation, StarMap makes use of the mod.toml native in KSA.
 
 ## Mod creation
 
-For more information on mod creation, check out the example mods: [StarMap-ExampleMods](https://github.com/StarMapLoader/StarMap-ExampleMods).
+For more information on mod creation, check out the example mods: [API information](https://github.com/StarMapLoader/StarMap/tree/main/StarMap.API).
 
 ## Future plans
 

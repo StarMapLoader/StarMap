@@ -54,19 +54,19 @@ namespace StarMap.API
     /// public void MethodName(KSA.Mod definingMod);
     /// </code>
     ///
-    /// Parameter requirements:
-    /// <list type="bullet">
-    ///   <item>
-    ///     <description>
-    ///       <paramref name="definingMod"/> the KSA.Mod instance that is being loaded.
-    ///     </description>
-    ///   </item>
-    /// </list>
+    /// The parameter <c>definingMod</c> is the <see cref="Mod"/> instance that is being loaded.
     /// 
     /// Requirements:
     /// <list type="bullet">
-    ///   <item><description>Return type must be <see cref="void"/>.</description></item>
-    ///   <item><description>Method must be an instance method (non-static).</description></item>
+    ///   <item>
+    ///     <description>Return type must be <see cref="void"/>.</description>
+    ///   </item>
+    ///   <item>
+    ///     <description>Method must be an instance method (non-static).</description>
+    ///   </item>
+    ///   <item>
+    ///     <description>Method must have exactly one parameter of type <see cref="Mod"/>.</description>
+    ///   </item>
     /// </list>
     /// </remarks>
     public class StarMapImmediateLoadAttribute : StarMapMethodAttribute

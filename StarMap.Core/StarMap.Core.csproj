@@ -19,19 +19,13 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(Configuration)' == 'Debug'">
-    <Reference Include="KSA">
-      <HintPath>..\Import\KSA.dll</HintPath>
-    </Reference>
-    <Reference Include="Brutal.Vulkan">
-      <HintPath>..\Import\Brutal.Vulkan.dll</HintPath>
-    </Reference>
-    <Reference Include="Brutal.Vulkan.Abstractions">
-      <HintPath>..\Import\Brutal.Vulkan.Abstractions.dll</HintPath>
-    </Reference>
+	  <Reference Include="..\..\Import\KSA.dll" />
+	  <Reference Include="..\..\Import\Brutal.Vulkan.dll" />
+	  <Reference Include="..\..\Import\Brutal.Vulkan.Abstractions.dll" />
   </ItemGroup>
 
 	<ItemGroup Condition="'$(Configuration)' != 'Debug'">
-		<PackageReference Include="StarMap.KSA.Dummy" Version="1.0.13">
+		<PackageReference Include="StarMap.KSA.Dummy" Version="1.0.21">
 			<ExcludeAssets>runtime</ExcludeAssets>
 		</PackageReference>
 	</ItemGroup>
