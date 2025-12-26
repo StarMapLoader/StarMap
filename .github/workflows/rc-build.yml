@@ -130,6 +130,14 @@ jobs:
                   name: rc-build
                   path: ./build_artifacts
 
+            - name: Setup NuGet source
+              run: |
+                  dotnet nuget add source \
+                    --username ${{ secrets.ORG_PACKAGE_USERNAME }} \
+                    --password ${{ secrets.ORG_PACKAGE_TOKEN }} \
+                    --store-password-in-clear-text \
+                    --name github "${{ env.NUGET_SOURCE }}"
+
             - name: Pack and push RC NuGet package
               run: |
                   dotnet restore ${{ env.API_PROJECT }}
@@ -139,10 +147,6 @@ jobs:
                     /p:PackageVersion=${{ needs.build.outputs.hash_version }} \
                     /p:Version=${{ needs.build.outputs.new_version }} \
                     /p:InformationalVersion=${{ needs.build.outputs.hash_version }}
-                  dotnet nuget add source --username "${{ github.actor }}" \
-                    --password "${{ secrets.GITHUB_TOKEN }}" \
-                    --store-password-in-clear-text \
-                    --name github "${{ env.NUGET_SOURCE }}"
                   dotnet nuget push ./nupkg/*.nupkg \
                     --source github \
                     --api-key "${{ secrets.GITHUB_TOKEN }}" \
