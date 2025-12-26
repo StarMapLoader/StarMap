@@ -16,7 +16,7 @@ jobs:
         runs-on: ubuntu-latest
         env:
             DOTNET_VERSION: 9.0
-            PROJECT: StarMapLoader/StarMapLoader.csproj
+            PROJECT: StarMap.Launcher/StarMap.Launcher.csproj
             NUGET_SOURCE: "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
 
         steps:
