@@ -1,4 +1,4 @@
-﻿using Google.Protobuf;
+﻿/*using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using StarMap.Types;
 using StarMap.Types.Pipes;
@@ -122,3 +122,4 @@ namespace StarMapLoader
         }
     }
 }
+*/
