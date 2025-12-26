@@ -96,8 +96,8 @@ jobs:
 
             - name: Rename executables
               run: |
-                  mv ${{ env.LAUNCHER_OUTPUT_PATH }}/MyProgram.Launcher.exe ${{ env.LAUNCHER_OUTPUT_PATH }}/MyProgram.exe
-                  mv ${{ env.STANDALONE_OUTPUT_PATH }}/MyProgram.exe ${{ env.STANDALONE_OUTPUT_PATH }}/MyProgram.exe
+                  mv ${{ env.LAUNCHER_OUTPUT_PATH }}/StarMap.Launcher.exe ${{ env.LAUNCHER_OUTPUT_PATH }}/MyProgram.exe
+                  mv ${{ env.STANDALONE_OUTPUT_PATH }}/StarMap.Loader.exe ${{ env.STANDALONE_OUTPUT_PATH }}/MyProgram.exe
 
             - name: Write version file
               run: echo "${{ steps.version.outputs.hash_version }}" > version.txt
