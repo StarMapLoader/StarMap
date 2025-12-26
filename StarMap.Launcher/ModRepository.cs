@@ -1,4 +1,4 @@
-﻿using StarMap.Index.API;
+﻿/*//using StarMap.Index.API;
 using StarMap.Types.Proto.IPC;
 using System.Text.Json;
 
@@ -10,7 +10,7 @@ namespace StarMapLoader
         public bool HasChanges { get; private set; }
 
         private readonly string _modsPath;
-        private readonly IModRespositoryClient _foreignModRepository;
+        //private readonly IModRespositoryClient _foreignModRepository;
         private readonly ModDownloader _downloader = new();
 
         private IPCUpdateModInformation[] _changes = [];
@@ -114,3 +114,4 @@ namespace StarMapLoader
         }
     }
 }
+*/

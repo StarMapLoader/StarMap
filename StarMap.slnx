@@ -1,0 +1,13 @@
+<Solution>
+    <Configurations>
+        <Platform Name="Any CPU" />
+        <Platform Name="ARM64" />
+        <Platform Name="x64" />
+        <Platform Name="x86" />
+    </Configurations>
+    <Project Path="StarMap.API/StarMap.API.csproj" />
+    <Project Path="StarMap.Core/StarMap.Core.csproj" />
+    <Project Path="StarMap.Types/StarMap.Types.csproj" />
+    <Project Path="StarMap.Loader/StarMap.Loader.csproj" />
+    <Project Path="StarMap.Launcher/StarMap.Launcher.csproj" />
+</Solution>
