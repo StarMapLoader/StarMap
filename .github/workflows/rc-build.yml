@@ -1,0 +1,198 @@
+name: Release new version
+
+on:
+    push:
+        branches: [dev]
+
+env:
+    DOTNET_VERSION: 10.0
+    STANDALONE_PROJECT: StarMap.Loader/StarMap.Loader.csproj
+    LAUNCHER_PROJECT: StarMap.Launcher/StarMap.Launcher.csproj
+    API_PROJECT: StarMap.API/StarMap.API.csproj
+    STANDALONE_OUTPUT_PATH: ./publish/standalone
+    LAUNCHER_OUTPUT_PATH: ./publish/launcher
+    OUTPUT_PATH: ./publish
+    NUGET_SOURCE: "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+    EXCLUDE: "*.pdb *.xml"
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        outputs:
+            new_version: ${{ steps.version.outputs.new_version }}
+            prev_version: ${{ steps.version.outputs.prev_version }}
+            hash_version: ${{ steps.version.outputs.hash_version }}
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+                  fetch-tags: true
+
+            - uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: ${{ env.DOTNET_VERSION }}
+
+            - name: Determine version bump
+              id: version
+              run: |
+                  git fetch --tags --force || true
+
+                  # Find latest semantic version
+                  current=$(git tag -l '[0-9]*.[0-9]*.[0-9]*' | sort -V | tail -n 1)
+                  if [ -z "$current" ]; then
+                      current="0.0.0"
+                  fi
+                  echo "Latest semantic tag: $current"
+
+                  ver=${current#v}
+                  major=$(printf "%s" "$ver" | awk -F. '{print $1+0}')
+                  minor=$(printf "%s" "$ver" | awk -F. '{print $2+0}')
+                  patch=$(printf "%s" "$ver" | awk -F. '{print $3+0}')
+
+                  patch=$((patch+1))
+                  new_version="${major}.${minor}.${patch}"
+
+                  # Truly unique RC version
+                  hash_version="${new_version}-rc.${GITHUB_RUN_NUMBER}+${GITHUB_SHA::7}"
+
+                  echo "Next version: $new_version"
+                  echo "RC version: $hash_version"
+
+                  echo "prev_version=$current" >> $GITHUB_OUTPUT
+                  echo "new_version=$new_version" >> $GITHUB_OUTPUT
+                  echo "hash_version=$hash_version" >> $GITHUB_OUTPUT
+
+            - name: Setup NuGet source
+              run: |
+                  dotnet nuget add source \
+                    --username ${{ secrets.ORG_PACKAGE_USERNAME }} \
+                    --password ${{ secrets.ORG_PACKAGE_TOKEN }} \
+                    --store-password-in-clear-text \
+                    --name github "${{ env.NUGET_SOURCE }}"
+
+            - name: Build launcher
+              run: |
+                  dotnet publish ${{ env.LAUNCHER_PROJECT }} \
+                    -c Release \
+                    -o ${{ env.LAUNCHER_OUTPUT_PATH }} \
+                    -r win-x64 \
+                    --self-contained false \
+                    /p:PackageVersion=${{ steps.version.outputs.hash_version }} \
+                    /p:Version=${{ steps.version.outputs.new_version }} \
+                    /p:AssemblyVersion=${{ steps.version.outputs.new_version }} \
+                    /p:FileVersion=${{ steps.version.outputs.new_version }}
+
+            - name: Build standalone
+              run: |
+                  dotnet publish ${{ env.STANDALONE_PROJECT }} \
+                    -c Release \
+                    -o ${{ env.STANDALONE_OUTPUT_PATH }} \
+                    -r win-x64 \
+                    --self-contained false \
+                    /p:PackageVersion=${{ steps.version.outputs.hash_version }} \
+                    /p:Version=${{ steps.version.outputs.new_version }} \
+                    /p:AssemblyVersion=${{ steps.version.outputs.new_version }} \
+                    /p:FileVersion=${{ steps.version.outputs.new_version }}
+
+            - name: Rename executables
+              run: |
+                  mv ${{ env.LAUNCHER_OUTPUT_PATH }}/MyProgram.Launcher.exe ${{ env.LAUNCHER_OUTPUT_PATH }}/MyProgram.exe
+                  mv ${{ env.STANDALONE_OUTPUT_PATH }}/MyProgram.exe ${{ env.STANDALONE_OUTPUT_PATH }}/MyProgram.exe
+
+            - name: Write version file
+              run: echo "${{ steps.version.outputs.hash_version }}" > version.txt
+
+            - name: Upload build artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: rc-build
+                  path: |
+                      ${{ env.LAUNCHER_OUTPUT_PATH }}
+                      ${{ env.STANDALONE_OUTPUT_PATH }}
+                      version.txt
+                  retention-days: 1
+
+    publish-RC-nuget:
+        runs-on: ubuntu-latest
+        needs: build
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: ${{ env.DOTNET_VERSION }}
+
+            - name: Download build artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  name: rc-build
+                  path: ./build_artifacts
+
+            - name: Pack and push RC NuGet package
+              run: |
+                  dotnet restore ${{ env.API_PROJECT }}
+                  dotnet pack ${{ env.API_PROJECT }} \
+                    -c Release \
+                    -o ./nupkg \
+                    /p:PackageVersion=${{ needs.build.outputs.hash_version }} \
+                    /p:Version=${{ needs.build.outputs.new_version }} \
+                    /p:InformationalVersion=${{ needs.build.outputs.hash_version }}
+                  dotnet nuget add source --username "${{ github.actor }}" \
+                    --password "${{ secrets.GITHUB_TOKEN }}" \
+                    --store-password-in-clear-text \
+                    --name github "${{ env.NUGET_SOURCE }}"
+                  dotnet nuget push ./nupkg/*.nupkg \
+                    --source github \
+                    --api-key "${{ secrets.GITHUB_TOKEN }}" \
+                    --skip-duplicate
+
+    release-RC-zip:
+        runs-on: ubuntu-latest
+        needs: build
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Download build artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  name: rc-build
+                  path: ./build_artifacts
+
+            - name: Ensure zip is available
+              run: |
+                  sudo apt-get update -y
+                  sudo apt-get install -y zip
+
+            - name: Package launcher ZIP
+              run: |
+                  cd ./build_artifacts/${{ env.LAUNCHER_OUTPUT_PATH }}
+                  zip -r $GITHUB_WORKSPACE/StarMapLauncher-RC.zip . -x ${{ env.EXCLUDE }}
+                  cd -
+
+            - name: Package standalone ZIP
+              run: |
+                  cd ./build_artifacts/${{ env.STANDALONE_OUTPUT_PATH }}
+                  zip -r $GITHUB_WORKSPACE/StarMapStandalone-RC.zip . -x ${{ env.EXCLUDE }}
+                  cd -
+
+            - name: Update RC GitHub release
+              uses: softprops/action-gh-release@v1
+              with:
+                  tag_name: rc
+                  name: Release Candidate
+                  prerelease: true
+                  files: |
+                      StarMapLauncher-RC.zip
+                      StarMapStandalone-RC.zip
+                      ./build_artifacts/version.txt
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Update RC tag
+              run: |
+                  git tag -f rc
+                  git push origin rc --force

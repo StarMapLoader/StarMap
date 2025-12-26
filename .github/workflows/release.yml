@@ -14,7 +14,10 @@ jobs:
             packages: write
         env:
             DOTNET_VERSION: 9.0
-            PROJECT: StarMapLoader/StarMapLoader.csproj
+            STANDALONE_PROJECT: StarMap.Loader/StarMap.Loader.csproj
+            LAUNCHER_PROJECT: StarMap.Launcher/StarMap.Launcher.csproj
+            STANDALONE_OUTPUT_PATH: ./publish/standalone
+            LAUNCHER_OUTPUT_PATH: ./publish/launcher
             OUTPUT_PATH: ./publish
             NUGET_SOURCE: "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
             EXCLUDE: "*.pdb *.xml"
@@ -65,15 +68,6 @@ jobs:
                   echo "type=$bump_type" >> $GITHUB_OUTPUT
                   echo "new=$new_version" >> $GITHUB_OUTPUT
 
-            - name: Tag and push new version
-              run: |
-                  git config user.name "github-actions"
-                  git config user.email "actions@github.com"
-
-                  NEW_VERSION="${{ steps.version.outputs.new }}"
-                  git tag "$NEW_VERSION"
-                  git push origin "$NEW_VERSION"
-
             - name: Setup Github NuGet
               run: |
                   dotnet nuget add source \
@@ -82,29 +76,27 @@ jobs:
                   --store-password-in-clear-text \
                   --name github "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
 
-            - name: Build
-              run: dotnet publish ${{ env.PROJECT }} -c Release -o ${{ env.OUTPUT_PATH }} -r win-x64 --self-contained false
+            - name: Build launcher
+              run: dotnet publish ${{ env.LAUNCHER_PROJECT }}
+                  -c Release -o ${{ env.LAUNCHER_OUTPUT_PATH }}
+                  -r win-x64
+                  --self-contained false
+                  /p:PackageVersion=${{ steps.version.outputs.new }} \
+                  /p:Version=${{ steps.version.outputs.new }} \
+                  /p:AssemblyVersion=${{ steps.version.outputs.new }} \
+                  /p:FileVersion=${{ steps.version.outputs.new }}
 
-            - name: Ensure zip is available
+            # - name: Run tests
+            #   run: dotnet test --no-build --verbosity normal
+
+            - name: Tag and push new version
               run: |
-                  sudo apt-get update -y
-                  sudo apt-get install -y zip
+                  git config user.name "github-actions"
+                  git config user.email "actions@github.com"
 
-            - name: Package ZIP
-              run: |
-                  cd ${{ env.OUTPUT_PATH }}
-                  zip -r $GITHUB_WORKSPACE/StarMap-${{ steps.version.outputs.new }}.zip . -x ${{ env.EXCLUDE }}
-                  cd -
-
-            - name: Create GitHub Release
-              uses: softprops/action-gh-release@v2
-              with:
-                  tag_name: ${{ steps.version.outputs.new }}
-                  name: Release ${{ steps.version.outputs.new }}
-                  body: |
-                      Automated release for version ${{ steps.version.outputs.new }}
-                      Triggered by PR #${{ github.event.pull_request.number }}
-                  files: StarMap-${{ steps.version.outputs.new }}.zip
+                  NEW_VERSION="${{ steps.version.outputs.new }}"
+                  git tag "$NEW_VERSION"
+                  git push origin "$NEW_VERSION"
 
             - name: Check whether StarMap.API changed since previous tag
               id: api_check
@@ -151,6 +143,42 @@ jobs:
                     --source https://api.nuget.org/v3/index.json \
                     --api-key "${{ secrets.NUGET_API_KEY }}" \
                     --skip-duplicate
+
+            - name: Build standalone
+              run: dotnet publish ${{ env.STANDALONE_PROJECT }}
+                  -c Release -o ${{ env.STANDALONE_OUTPUT_PATH }}
+                  -r win-x64
+                  --self-contained false
+                  /p:PackageVersion=${{ steps.version.outputs.new }} \
+                  /p:Version=${{ steps.version.outputs.new }} \
+                  /p:AssemblyVersion=${{ steps.version.outputs.new }} \
+                  /p:FileVersion=${{ steps.version.outputs.new }}
+
+            - name: Rename executables
+              run: |
+                  ren publish\launcher\MyProgram.Launcher.exe MyProgram.exe
+                  ren publish\launcher\MyProgram.Launcher.exe MyProgram.exe
+
+            - name: Ensure zip is available
+              run: |
+                  sudo apt-get update -y
+                  sudo apt-get install -y zip
+
+            - name: Package launcher ZIP
+              run: |
+                  cd ${{ env.LAUNCHER_OUTPUT_PATH }}
+                  zip -r $GITHUB_WORKSPACE/StarMapLauncher-${{ steps.version.outputs.new }}.zip . -x ${{ env.EXCLUDE }}
+                  cd -
+
+            - name: Create GitHub Release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: ${{ steps.version.outputs.new }}
+                  name: Release ${{ steps.version.outputs.new }}
+                  body: |
+                      Automated release for version ${{ steps.version.outputs.new }}
+                      Triggered by PR #${{ github.event.pull_request.number }}
+                  files: StarMap-${{ steps.version.outputs.new }}.zip
 
             - name: Upload publish folder for Windows installer
               uses: actions/upload-artifact@v4
