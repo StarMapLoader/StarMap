@@ -5,24 +5,25 @@ on:
         types: [closed]
         branches: [main]
 
+env:
+    DOTNET_VERSION: 10.0
+    STANDALONE_PROJECT: StarMap.Loader/StarMap.Loader.csproj
+    LAUNCHER_PROJECT: StarMap.Launcher/StarMap.Launcher.csproj
+    API_PROJECT: StarMap.API/StarMap.API.csproj
+    STANDALONE_OUTPUT_PATH: ./publish/standalone
+    LAUNCHER_OUTPUT_PATH: ./publish/launcher
+    OUTPUT_PATH: ./publish
+    NUGET_SOURCE: "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+    EXCLUDE: "*.pdb *.xml"
+
 jobs:
     build:
-        if: github.event.pull_request.merged == true
         runs-on: ubuntu-latest
-        permissions:
-            contents: write
-            packages: write
-        env:
-            DOTNET_VERSION: 9.0
-            STANDALONE_PROJECT: StarMap.Loader/StarMap.Loader.csproj
-            LAUNCHER_PROJECT: StarMap.Launcher/StarMap.Launcher.csproj
-            STANDALONE_OUTPUT_PATH: ./publish/standalone
-            LAUNCHER_OUTPUT_PATH: ./publish/launcher
-            OUTPUT_PATH: ./publish
-            NUGET_SOURCE: "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
-            EXCLUDE: "*.pdb *.xml"
         outputs:
-            version: ${{ steps.version.outputs.new }}
+            new_version: ${{ steps.version.outputs.new_version }}
+            prev_version: ${{ steps.version.outputs.prev_version }}
+            hash_version: ${{ steps.version.outputs.hash_version }}
+            api_changed: ${{ steps.api_check.outputs.api_changed }}
         steps:
             - uses: actions/checkout@v4
               with:
@@ -60,54 +61,79 @@ jobs:
                     patch=$((patch+1)); type="patch"
                   fi
 
-                  new_version="${major}.${minor}.${patch}"
+                  ew_version="${major}.${minor}.${patch}"
+
                   echo "Next version: $new_version"
+                  echo "RC version: $hash_version"
 
-                  # Export outputs for later steps
-                  echo "prev=$current" >> $GITHUB_OUTPUT
-                  echo "type=$bump_type" >> $GITHUB_OUTPUT
-                  echo "new=$new_version" >> $GITHUB_OUTPUT
+                  echo "prev_version=$current" >> $GITHUB_OUTPUT
+                  echo "new_version=$new_version" >> $GITHUB_OUTPUT
 
-            - name: Setup Github NuGet
+            - name: Setup NuGet source
               run: |
                   dotnet nuget add source \
-                  --username ${{ secrets.ORG_PACKAGE_USERNAME }} \
-                  --password ${{ secrets.ORG_PACKAGE_TOKEN }} \
-                  --store-password-in-clear-text \
-                  --name github "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+                    --username ${{ secrets.ORG_PACKAGE_USERNAME }} \
+                    --password ${{ secrets.ORG_PACKAGE_TOKEN }} \
+                    --store-password-in-clear-text \
+                    --name github "${{ env.NUGET_SOURCE }}"
 
             - name: Build launcher
-              run: dotnet publish ${{ env.LAUNCHER_PROJECT }}
-                  -c Release -o ${{ env.LAUNCHER_OUTPUT_PATH }}
-                  -r win-x64
-                  --self-contained false
-                  /p:PackageVersion=${{ steps.version.outputs.new }} \
-                  /p:Version=${{ steps.version.outputs.new }} \
-                  /p:AssemblyVersion=${{ steps.version.outputs.new }} \
-                  /p:FileVersion=${{ steps.version.outputs.new }}
+              run: |
+                  dotnet publish ${{ env.LAUNCHER_PROJECT }} \
+                    -c Release \
+                    -o ${{ env.LAUNCHER_OUTPUT_PATH }} \
+                    -r win-x64 \
+                    --self-contained false \
+                    /p:PackageVersion=${{ steps.version.outputs.new_version }} \
+                    /p:Version=${{ steps.version.outputs.new_version }} \
+                    /p:AssemblyVersion=${{ steps.version.outputs.new_version }} \
+                    /p:FileVersion=${{ steps.version.outputs.new_version }}
 
-            # - name: Run tests
-            #   run: dotnet test --no-build --verbosity normal
+            - name: Build standalone
+              run: |
+                  dotnet publish ${{ env.STANDALONE_PROJECT }} \
+                    -c Release \
+                    -o ${{ env.STANDALONE_OUTPUT_PATH }} \
+                    -r win-x64 \
+                    --self-contained false \
+                    /p:PackageVersion=${{ steps.version.outputs.new_version }} \
+                    /p:Version=${{ steps.version.outputs.new_version }} \
+                    /p:AssemblyVersion=${{ steps.version.outputs.new_version }} \
+                    /p:FileVersion=${{ steps.version.outputs.new_version }}
+
+            - name: Rename executables
+              run: |
+                  mv ${{ env.LAUNCHER_OUTPUT_PATH }}/StarMap.Launcher.exe ${{ env.LAUNCHER_OUTPUT_PATH }}/StarMap.exe
+                  mv ${{ env.STANDALONE_OUTPUT_PATH }}/StarMap.Loader.exe ${{ env.STANDALONE_OUTPUT_PATH }}/StarMap.exe
 
             - name: Tag and push new version
               run: |
                   git config user.name "github-actions"
                   git config user.email "actions@github.com"
 
-                  NEW_VERSION="${{ steps.version.outputs.new }}"
+                  NEW_VERSION="${{ steps.version.outputs.new_version }}"
                   git tag "$NEW_VERSION"
                   git push origin "$NEW_VERSION"
+            - name: Upload build artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: rc-build
+                  path: |
+                      ${{ env.LAUNCHER_OUTPUT_PATH }}
+                      ${{ env.STANDALONE_OUTPUT_PATH }}
+                      version.txt
+                  retention-days: 1
 
             - name: Check whether StarMap.API changed since previous tag
               id: api_check
               run: |
-                  current="${{ steps.version.outputs.new }}"
-                  prev="${{ steps.version.outputs.prev }}"
+                  current="${{ steps.version.outputs.new_version }}"
+                  prev="${{  steps.version.outputs.prev_version }}"
 
                   echo "previous_tag=$prev" >> $GITHUB_OUTPUT
 
                   if [ -z "$prev" ]; then
-                      echo "changed=true" >> $GITHUB_OUTPUT
+                      echo "api_changed=true" >> $GITHUB_OUTPUT
                       exit 0
                   fi
 
@@ -123,41 +149,66 @@ jobs:
                   } >> "$GITHUB_OUTPUT"
 
                   if echo "$diff" | grep -qE '^StarMap.API/|^StarMap.API.csproj'; then
-                      echo "changed=true" >> $GITHUB_OUTPUT
+                      echo "api_changed=true" >> $GITHUB_OUTPUT
                   else
-                      echo "changed=false" >> $GITHUB_OUTPUT
+                      echo "api_changed=false" >> $GITHUB_OUTPUT
                   fi
 
+    publish-nuget:
+        runs-on: ubuntu-latest
+        needs: build
+        if: needs.build.outputs.api_changed == true
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: ${{ env.DOTNET_VERSION }}
+
+            - name: Download build artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  name: rc-build
+                  path: ./build_artifacts
+
+            - name: Setup NuGet source
+              run: |
+                  dotnet nuget add source \
+                    --username ${{ secrets.ORG_PACKAGE_USERNAME }} \
+                    --password ${{ secrets.ORG_PACKAGE_TOKEN }} \
+                    --store-password-in-clear-text \
+                    --name github "${{ env.NUGET_SOURCE }}"
+
             - name: Pack and push StarMap.API (if changed)
-              if: steps.api_check.outputs.changed == 'true'
               run: |
                   dotnet restore StarMap.API/StarMap.API.csproj
                   dotnet pack StarMap.API/StarMap.API.csproj \
                     -c Release \
                     -o ./nupkg \
-                    /p:PackageVersion=${{ steps.version.outputs.new }} \
-                    /p:Version=${{ steps.version.outputs.new }} \
-                    /p:AssemblyVersion=${{ steps.version.outputs.new }} \
-                    /p:FileVersion=${{ steps.version.outputs.new }}
+                    /p:PackageVersion=${{ needs.build.outputs.new_version }} \
+                    /p:Version=${{ needs.build.outputs.new_version }} \
+                    /p:AssemblyVersion=${{ needs.build.outputs.new_version }} \
+                    /p:FileVersion=${{ needs.build.outputs.new_version }}
                   dotnet nuget push ./nupkg/*.nupkg \
                     --source https://api.nuget.org/v3/index.json \
                     --api-key "${{ secrets.NUGET_API_KEY }}" \
                     --skip-duplicate
 
-            - name: Build standalone
-              run: dotnet publish ${{ env.STANDALONE_PROJECT }}
-                  -c Release -o ${{ env.STANDALONE_OUTPUT_PATH }}
-                  -r win-x64
-                  --self-contained false
-                  /p:PackageVersion=${{ steps.version.outputs.new }} \
-                  /p:Version=${{ steps.version.outputs.new }} \
-                  /p:AssemblyVersion=${{ steps.version.outputs.new }} \
-                  /p:FileVersion=${{ steps.version.outputs.new }}
+    release-zip:
+        runs-on: ubuntu-latest
+        needs: build
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
 
-            - name: Rename executables
-              run: |
-                  ren publish\launcher\MyProgram.Launcher.exe MyProgram.exe
-                  ren publish\launcher\MyProgram.Launcher.exe MyProgram.exe
+            - name: Download build artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  name: rc-build
+                  path: ./build_artifacts
 
             - name: Ensure zip is available
               run: |
@@ -166,29 +217,31 @@ jobs:
 
             - name: Package launcher ZIP
               run: |
-                  cd ${{ env.LAUNCHER_OUTPUT_PATH }}
-                  zip -r $GITHUB_WORKSPACE/StarMapLauncher-${{ steps.version.outputs.new }}.zip . -x ${{ env.EXCLUDE }}
+                  cd ./build_artifacts/${{ env.LAUNCHER_OUTPUT_PATH }}
+                  zip -r $GITHUB_WORKSPACE/StarMapLauncher-${{ needs.build.outputs.new_version }}.zip . -x ${{ env.EXCLUDE }}
+                  cd -
+
+            - name: Package standalone ZIP
+              run: |
+                  cd ./build_artifacts/${{ env.STANDALONE_OUTPUT_PATH }}
+                  zip -r $GITHUB_WORKSPACE/StarMapStandalone-${{ needs.build.outputs.new_version }}.zip . -x ${{ env.EXCLUDE }}
                   cd -
 
             - name: Create GitHub Release
               uses: softprops/action-gh-release@v2
               with:
-                  tag_name: ${{ steps.version.outputs.new }}
-                  name: Release ${{ steps.version.outputs.new }}
+                  tag_name: ${{ needs.build.outputs.new_version }}
+                  name: Release ${{ needs.build.outputs.new_version }}
                   body: |
-                      Automated release for version ${{ steps.version.outputs.new }}
+                      Automated release for version ${{ needs.build.outputs.new_version }}
                       Triggered by PR #${{ github.event.pull_request.number }}
-                  files: StarMap-${{ steps.version.outputs.new }}.zip
+                  files: |
+                      StarMapLauncher-${{ needs.build.outputs.new_version }}.zip
+                      StarMapStandalone-${{ needs.build.outputs.new_version }}.zip
 
-            - name: Upload publish folder for Windows installer
-              uses: actions/upload-artifact@v4
-              with:
-                  name: publish
-                  path: ${{ env.OUTPUT_PATH }}
-
-    build-installer:
+    build-release-installer:
         runs-on: windows-latest
-        needs: build # depends on your main build job
+        needs: build
         steps:
             - uses: actions/checkout@v4
 
@@ -206,11 +259,11 @@ jobs:
             # Build the installer using the same version as ZIP
             - name: Build Inno Setup Installer
               run: |
-                  ISCC.exe installer\WindowsInstaller.iss /dAppVersion=${{ needs.build.outputs.version }} /dOutputName=StarMap-${{ needs.build.outputs.version }}
+                  ISCC.exe installer\WindowsInstaller.iss /dAppVersion=${{ needs.build.outputs.new_version }} /dOutputName=StarMap-${{ needs.build.outputs.new_version }}
 
             # Attach installer to the release
             - name: Attach installer to GitHub Release
               uses: softprops/action-gh-release@v2
               with:
-                  tag_name: ${{ needs.build.outputs.version }}
-                  files: installer/dist/StarMap-${{ needs.build.outputs.version }}.exe
+                  tag_name: ${{ needs.build.outputs.new_version }}
+                  files: installer/dist/StarMap-${{ needs.build.outputs.new_version }}.exe

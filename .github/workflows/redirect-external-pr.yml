@@ -1,0 +1,57 @@
+name: Redirect external PRs
+
+on:
+    pull_request_target:
+        types: [opened, reopened]
+        branches: [main, dev]
+
+permissions:
+    contents: write
+    pull-requests: write
+
+jobs:
+    redirect:
+        # Only run for PRs coming from forks
+        if: github.event.pull_request.head.repo.full_name != github.repository
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Resolve dev branch SHA
+              id: devsha
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  DEV_SHA=$(gh api repos/${{ github.repository }}/git/ref/heads/dev --jq '.object.sha')
+                  echo "sha=$DEV_SHA" >> $GITHUB_OUTPUT
+
+            - name: Create internal feature branch from dev
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  PR_NUMBER="${{ github.event.pull_request.number }}"
+                  SOURCE_BRANCH="${{ github.event.pull_request.head.ref }}"
+
+                  SAFE_SOURCE_BRANCH=$(echo "$SOURCE_BRANCH" | tr '/' '-')
+                  NEW_BRANCH="feature/external/pr-${PR_NUMBER}-${SAFE_SOURCE_BRANCH}"
+
+                  echo "Creating branch $NEW_BRANCH from dev"
+
+                  gh api repos/${{ github.repository }}/git/refs \
+                    -f ref="refs/heads/$NEW_BRANCH" \
+                    -f sha="${{ steps.devsha.outputs.sha }}"
+
+            - name: Retarget PR to new branch
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  PR_NUMBER="${{ github.event.pull_request.number }}"
+                  SOURCE_BRANCH="${{ github.event.pull_request.head.ref }}"
+
+                  SAFE_SOURCE_BRANCH=$(echo "$SOURCE_BRANCH" | tr '/' '-')
+                  NEW_BRANCH="feature/external/pr-${PR_NUMBER}-${SAFE_SOURCE_BRANCH}"
+
+                  echo "Updating PR #$PR_NUMBER base to $NEW_BRANCH"
+
+                  gh api repos/${{ github.repository }}/pulls/$PR_NUMBER \
+                    -X PATCH \
+                    -f base="$NEW_BRANCH"
