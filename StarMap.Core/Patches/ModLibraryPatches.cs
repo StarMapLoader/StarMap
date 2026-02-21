@@ -1,5 +1,7 @@
 ﻿using HarmonyLib;
 using KSA;
+using StarMap.API;
+using StarMap.Core.ModRepository;
 
 namespace StarMap.Core.Patches
 {
@@ -10,7 +12,13 @@ namespace StarMap.Core.Patches
         [HarmonyPostfix]
         public static void AfterLoad()
         {
-            StarMapCore.Instance?.LoadedMods.OnAllModsLoaded();
+            var modRegistry = StarMapCore.Instance?.Loader.ModRegistry;
+            if (modRegistry is not ModRegistry registry) return;
+
+            foreach (var (_, @object, method) in registry.Get<StarMapAllModsLoadedAttribute>())
+            {
+                method.Invoke(@object, []);
+            }
         }
     }
 }

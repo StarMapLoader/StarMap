@@ -1,4 +1,4 @@
-﻿using StarMap.Types.Pipes;
+﻿/*using StarMap.Types.Pipes;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -87,3 +87,4 @@ namespace StarMapLoader
         }
     }
 }
+*/

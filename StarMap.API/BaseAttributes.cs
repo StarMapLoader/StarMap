@@ -81,7 +81,6 @@ namespace StarMap.API
 
     /// <summary>
     /// Methods marked with this attribute will be called when all mods are loaded.
-    /// This is to be used for when the mod has dependencies on other mods.
     /// </summary>
     /// <remarks>
     /// Methods using this attribute must follow this signature:

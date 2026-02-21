@@ -9,19 +9,21 @@ namespace StarMap.Core.ModRepository
         private readonly AssemblyLoadContext _coreAssemblyLoadContext;
         private readonly AssemblyDependencyResolver _modDependencyResolver;
 
-        public ModAssemblyLoadContext(string modId, string modDirectory, AssemblyLoadContext coreAssemblyContext)
+        public RuntimeMod? RuntimeMod { get; set; }
+
+        public ModAssemblyLoadContext(string modId, string entryAssemblyLocation, AssemblyLoadContext coreAssemblyContext)
             : base()
         {
             _coreAssemblyLoadContext = coreAssemblyContext;
 
             _modDependencyResolver = new AssemblyDependencyResolver(
-                Path.GetFullPath(Path.Combine(modDirectory, modId + ".dll"))
+                Path.GetFullPath(entryAssemblyLocation)
             );
         }
 
         protected override Assembly? Load(AssemblyName assemblyName)
         {
-            var existingInDefault = AssemblyLoadContext.Default.Assemblies
+            var existingInDefault = Default.Assemblies
                 .FirstOrDefault(a => string.Equals(a.GetName().Name, assemblyName.Name, StringComparison.OrdinalIgnoreCase));
             if (existingInDefault != null)
                 return existingInDefault;
@@ -41,6 +43,25 @@ namespace StarMap.Core.ModRepository
                 }
                 catch (FileNotFoundException)
                 {
+                }
+            }
+
+            if (RuntimeMod is RuntimeMod modInfo && modInfo.Dependencies.Count > 0)
+            {
+                foreach (var (dependency, importedAssemblies) in modInfo.Dependencies)
+                {
+                    if (importedAssemblies.Contains(assemblyName.Name ?? string.Empty))
+                    {
+                        try
+                        {
+                            var asm = dependency.ModAssemblyLoadContext.LoadFromAssemblyName(assemblyName);
+                            if (asm != null)
+                                return asm;
+                        }
+                        catch (FileNotFoundException)
+                        {
+                        }
+                    }
                 }
             }
 
