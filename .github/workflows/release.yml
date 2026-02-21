@@ -61,7 +61,7 @@ jobs:
                     patch=$((patch+1)); type="patch"
                   fi
 
-                  ew_version="${major}.${minor}.${patch}"
+                  new_version="${major}.${minor}.${patch}"
 
                   echo "Next version: $new_version"
                   echo "RC version: $hash_version"
