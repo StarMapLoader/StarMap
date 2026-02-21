@@ -40,6 +40,7 @@ namespace StarMap
             }
 
             Directory.SetCurrentDirectory(gameDirectory);
+            AppContext.SetData("APP_CONTEXT_BASE_DIRECTORY", gameDirectory + Path.DirectorySeparatorChar);
 
             _core = core;
             core.Init();
