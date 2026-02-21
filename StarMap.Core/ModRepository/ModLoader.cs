@@ -63,7 +63,7 @@ namespace StarMap.Core.ModRepository
             {
                 if (!mod.Enabled)
                 {
-                    Console.WriteLine($"StarMap - Nod loading mod: {mod.Id} because it is disable in manifest");
+                    Console.WriteLine($"StarMap - Not loading mod: {mod.Id} because it is disable in manifest");
                     continue;
                 }
 
