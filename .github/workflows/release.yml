@@ -41,8 +41,8 @@ jobs:
                   git fetch --tags || true
                   current=$(git describe --tags --abbrev=0 2>/dev/null || true)
                   if [ -z "$current" ]; then
-                    echo "No tags found, defaulting to v0.0.0"
-                    current="v0.0.0"
+                    echo "No tags found, defaulting to 0.0.0"
+                    current="0.0.0"
                   fi
 
                   # Remove leading 'v' then extract parts using awk
@@ -68,6 +68,15 @@ jobs:
 
                   echo "prev_version=$current" >> $GITHUB_OUTPUT
                   echo "new_version=$new_version" >> $GITHUB_OUTPUT
+
+            - name: Tag and push new version
+              run: |
+                  git config user.name "github-actions"
+                  git config user.email "actions@github.com"
+
+                  NEW_VERSION="${{ steps.version.outputs.new_version }}"
+                  git tag "$NEW_VERSION"
+                  git push origin "$NEW_VERSION"
 
             - name: Setup NuGet source
               run: |
@@ -106,18 +115,10 @@ jobs:
                   mv ${{ env.LAUNCHER_OUTPUT_PATH }}/StarMap.Launcher.exe ${{ env.LAUNCHER_OUTPUT_PATH }}/StarMap.exe
                   mv ${{ env.STANDALONE_OUTPUT_PATH }}/StarMap.Loader.exe ${{ env.STANDALONE_OUTPUT_PATH }}/StarMap.exe
 
-            - name: Tag and push new version
-              run: |
-                  git config user.name "github-actions"
-                  git config user.email "actions@github.com"
-
-                  NEW_VERSION="${{ steps.version.outputs.new_version }}"
-                  git tag "$NEW_VERSION"
-                  git push origin "$NEW_VERSION"
             - name: Upload build artifacts
               uses: actions/upload-artifact@v4
               with:
-                  name: rc-build
+                  name: publish
                   path: |
                       ${{ env.LAUNCHER_OUTPUT_PATH }}
                       ${{ env.STANDALONE_OUTPUT_PATH }}
@@ -250,7 +251,7 @@ jobs:
               uses: actions/download-artifact@v4
               with:
                   name: publish
-                  path: publish
+                  path: ./build_artifacts
 
             # Install Inno Setup via Chocolatey
             - name: Install Inno Setup
