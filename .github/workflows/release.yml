@@ -171,7 +171,7 @@ jobs:
             - name: Download build artifacts
               uses: actions/download-artifact@v4
               with:
-                  name: rc-build
+                  name: publish
                   path: ./build_artifacts
 
             - name: Setup NuGet source
@@ -208,7 +208,7 @@ jobs:
             - name: Download build artifacts
               uses: actions/download-artifact@v4
               with:
-                  name: rc-build
+                  name: publish
                   path: ./build_artifacts
 
             - name: Ensure zip is available
