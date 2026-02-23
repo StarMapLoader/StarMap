@@ -35,6 +35,8 @@ jobs:
                     current="0.0.0"
                   fi
 
+                  # Remove leading 'v' then extract parts using awk
+                  ver=${current#v}
                   major=$(printf "%s" "$ver" | awk -F. '{print $1+0}')
                   minor=$(printf "%s" "$ver" | awk -F. '{print $2+0}')
                   patch=$(printf "%s" "$ver" | awk -F. '{print $3+0}')
