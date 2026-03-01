@@ -19,7 +19,8 @@
   </ItemGroup>
 
 	<ItemGroup Condition="'$(Configuration)' == 'Debug'">
-		<Reference Include="..\..\Import\KSA.dll" />
+		<Reference Include="..\..\..\..\games\KSA\Kitten Space Agency\KSA.dll" />
+		<Reference Include="..\..\..\..\games\KSA\Kitten Space Agency\Brutal.ImGui.dll" />
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(Configuration)' != 'Debug'">

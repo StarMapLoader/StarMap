@@ -5,10 +5,21 @@ using StarMap.API;
 namespace StarMap.Core.Patches
 {
     [HarmonyPatch(typeof(Program))]
-    internal static class ProgramPatcher
+    internal static class ProgramPatches
     {
         private const string OnDrawUiMethodName = "OnDrawUi";
         private const string OnFrameMethodName = "OnFrame";
+
+        [HarmonyPatch(MethodType.Constructor)]
+        [HarmonyPostfix]
+        public static bool AfterProgramConstructor(IReadOnlyList<string> inArgs)
+        {
+            if (ConfirmModsPatches.HasEnabledMods)
+            {
+                //AdviceRestartPopup.Create();
+            }
+            return true;
+        }
 
         [HarmonyPatch(OnDrawUiMethodName)]
         [HarmonyPrefix]

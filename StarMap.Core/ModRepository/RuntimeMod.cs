@@ -1,20 +1,16 @@
 ﻿using KSA;
 using StarMap.API;
 using StarMap.Core.Config;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Reflection;
 using System.Runtime.Loader;
-using System.Text;
 using Tomlet;
 
 namespace StarMap.Core.ModRepository
 {
     internal class RuntimeMod
     {
-        private static readonly string _rootContentPath = Path.Combine(["Content"]);
+        private static readonly string[] _modLocations = [Path.Combine(["Content"]), ModLibrary.LocalModsFolderPath];
 
         public required string ModId { get; init; }
         public required ModAssemblyLoadContext ModAssemblyLoadContext { get; init; }
@@ -31,19 +27,30 @@ namespace StarMap.Core.ModRepository
         public MethodInfo? BeforeMainAction { get; set; } = null;
         public MethodInfo? PrepareSystemsAction { get; set; } = null;
 
+        public static bool TryGetModLocation(ModEntry manifestEntry, [NotNullWhen(true)] out string? modPath)
+        {
+            modPath = null;
+
+            foreach (var location in _modLocations)
+            {
+                var modManifestPath = Path.Combine(location, manifestEntry.Id, "mod.toml");
+                if (File.Exists(modManifestPath))
+                {
+                    modPath = Path.Combine(location, manifestEntry.Id);
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         public static bool TryCreateMod(ModEntry manifestEntry, AssemblyLoadContext coreALC, [NotNullWhen(true)] out RuntimeMod? runtimeMod)
         {
             runtimeMod = null;
 
-            var modPath = Path.Combine(_rootContentPath, manifestEntry.Id);
+            if (!TryGetModLocation(manifestEntry, out var modPath)) return false;
             var modTomlPath = Path.Combine(modPath, "mod.toml");
-            if (!File.Exists(modTomlPath))
-            {
-                modPath = Path.Combine(ModLibrary.LocalModsFolderPath, manifestEntry.Id);
-                modTomlPath = Path.Combine(modPath, "mod.toml");
-                if (!File.Exists(modTomlPath)) return false;
-            }
+
             var tomlConfig = TomletMain.To<RootConfig>(File.ReadAllText(modTomlPath));
             if (tomlConfig?.StarMap is not StarMapConfig starMapConfig)
             {
@@ -100,7 +107,7 @@ namespace StarMap.Core.ModRepository
 
             if (NotLoadedModDependencies.Count > 0)
             {
-                
+
                 modRegistry.WaitingMods.Add(this);
                 return false;
             }
