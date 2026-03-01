@@ -56,9 +56,6 @@ namespace StarMap.Core.ModRepository
             var mods = ModLibrary.Manifest.Mods;
             if (mods is null) return;
 
-            string rootPath = "Content";
-            string path = Path.Combine(new ReadOnlySpan<string>(in rootPath));
-
             foreach (var mod in mods)
             {
                 if (!mod.Enabled)
@@ -66,8 +63,6 @@ namespace StarMap.Core.ModRepository
                     Console.WriteLine($"StarMap - Nod loading mod: {mod.Id} because it is disable in manifest");
                     continue;
                 }
-
-                var modPath = Path.Combine(path, mod.Id);
 
                 if (!RuntimeMod.TryCreateMod(mod, _coreAssemblyLoadContext, out var runtimeMod))
                     continue;
