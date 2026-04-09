@@ -4,7 +4,6 @@ namespace StarMap.Types
 {
     public class LoaderConfig
     {
-
         public bool TryLoadConfig()
         {
             if (!File.Exists("./StarMapConfig.json"))
@@ -21,7 +20,8 @@ namespace StarMap.Types
 
             if (string.IsNullOrEmpty(config.GameLocation))
             {
-                Console.WriteLine("StarMap - The 'GameLocation' property in StarMapConfig.json is either empty or points to a non-existing file.");
+
+                Console.WriteLine("StarMap - The 'GameLocation' property in StarMapConfig.json is either empty or points to a non-existing file." + Path.GetFullPath("./StarMapConfig.json"));
                 return false;
             }
 

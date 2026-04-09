@@ -1,29 +1,37 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<Configurations>Debug;Release;SourceNuget</Configurations>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	</PropertyGroup>
 
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="Lib.Harmony" Version="2.4.2" />
+		<PackageReference Include="Samboy063.Tomlet" Version="6.1.0">
+			<ExcludeAssets>runtime</ExcludeAssets>
+		</PackageReference>
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Lib.Harmony" Version="2.4.2" />
-	  <PackageReference Include="Samboy063.Tomlet" Version="6.1.0">
-		  <ExcludeAssets>runtime</ExcludeAssets>
-	  </PackageReference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\StarMap.API\StarMap.API.csproj" />
-    <ProjectReference Include="..\StarMap.Types\StarMap.Types.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\StarMap.API\StarMap.API.csproj" />
+		<ProjectReference Include="..\StarMap.Types\StarMap.Types.csproj" />
+	</ItemGroup>
 
 	<ItemGroup Condition="'$(Configuration)' == 'Debug'">
 		<Reference Include="..\..\Import\KSA.dll" />
+		<Reference Include="..\..\Import\Brutal.*.dll" />
 	</ItemGroup>
 
-	<ItemGroup Condition="'$(Configuration)' != 'Debug'">
-		<PackageReference Include="StarMap.KSA.Dummy" Version="1.0.22">
+	<ItemGroup Condition="'$(Configuration)' == 'SourceNuget'">
+		<PackageReference Include="RocketWerkz.KSA" Version="2026.7.6.4939">
+			<ExcludeAssets>runtime</ExcludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(Configuration)' == 'Release'">
+		<PackageReference Include="RocketWerkz.KSA.Ref" Version="2026.7.6.4939">
 			<ExcludeAssets>runtime</ExcludeAssets>
 		</PackageReference>
 	</ItemGroup>

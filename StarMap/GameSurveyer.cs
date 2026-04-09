@@ -1,4 +1,4 @@
-﻿using StarMap.Types.Mods;
+﻿using StarMap.Types;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.Loader;
@@ -7,7 +7,6 @@ namespace StarMap
 {
     internal class GameSurveyer : IDisposable
     {
-        private readonly IGameFacade _facade;
         private readonly AssemblyLoadContext _gameAssemblyContext;
         private readonly string _gameLocation;
         private readonly string[] _args;
@@ -15,9 +14,9 @@ namespace StarMap
         private Assembly? _game;
         private IStarMapCore? _core;
 
-        public GameSurveyer(IGameFacade facade, AssemblyLoadContext alc, string location, string[] args)
+
+        public GameSurveyer(AssemblyLoadContext alc, string location, string[] args)
         {
-            _facade = facade;
             _gameAssemblyContext = alc;
             _gameLocation = location;
             _args = args;
