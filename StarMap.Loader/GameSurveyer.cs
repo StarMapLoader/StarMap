@@ -10,15 +10,17 @@ namespace StarMap
         private readonly IGameFacade _facade;
         private readonly AssemblyLoadContext _gameAssemblyContext;
         private readonly string _gameLocation;
+        private readonly string[] _args;
 
         private Assembly? _game;
         private IStarMapCore? _core;
 
-        public GameSurveyer(IGameFacade facade, AssemblyLoadContext alc, string location)
+        public GameSurveyer(IGameFacade facade, AssemblyLoadContext alc, string location, string[] args)
         {
             _facade = facade;
             _gameAssemblyContext = alc;
             _gameLocation = location;
+            _args = args;
         }
 
         public bool TryLoadCoreAndGame()
@@ -51,9 +53,7 @@ namespace StarMap
         {
             Debug.Assert(_game is not null, "Load needs to be called before running game");
 
-            string[] args = [];
-            
-            _game.EntryPoint!.Invoke(null, [args]);
+            _game.EntryPoint!.Invoke(null, [_args]);
         }
 
         public void Dispose()
