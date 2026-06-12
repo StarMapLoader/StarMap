@@ -1,4 +1,4 @@
-name: Release new version
+name: Release new RC release
 
 on:
     push:
@@ -61,6 +61,11 @@ jobs:
                   echo "prev_version=$current" >> $GITHUB_OUTPUT
                   echo "new_version=$new_version" >> $GITHUB_OUTPUT
                   echo "hash_version=$hash_version" >> $GITHUB_OUTPUT
+
+            - name: Update RC tag
+              run: |
+                  git tag -f rc
+                  git push origin rc --force
 
             - name: Setup NuGet source
               run: |
@@ -195,8 +200,3 @@ jobs:
                       ./build_artifacts/version.txt
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-            - name: Update RC tag
-              run: |
-                  git tag -f rc
-                  git push origin rc --force

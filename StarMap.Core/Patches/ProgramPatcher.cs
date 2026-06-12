@@ -7,10 +7,11 @@ namespace StarMap.Core.Patches
     [HarmonyPatch(typeof(Program))]
     internal static class ProgramPatcher
     {
-        private const string OnDrawUiMethodName = "OnDrawUi";
+        private const string OnBeforeDrawUiMethodName = "OnDrawUiFrame";
+        private const string OnAfterDrawUiMethodName = "OnDrawUiViewports";
         private const string OnFrameMethodName = "OnFrame";
 
-        [HarmonyPatch(OnDrawUiMethodName)]
+        [HarmonyPatch(OnBeforeDrawUiMethodName)]
         [HarmonyPrefix]
         public static void BeforeOnDrawUi(double dt)
         {
@@ -22,7 +23,7 @@ namespace StarMap.Core.Patches
             }
         }
 
-        [HarmonyPatch(OnDrawUiMethodName)]
+        [HarmonyPatch(OnAfterDrawUiMethodName)]
         [HarmonyPostfix]
         public static void AfterOnDrawUi(double dt)
         {

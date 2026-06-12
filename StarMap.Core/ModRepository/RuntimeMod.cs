@@ -38,7 +38,12 @@ namespace StarMap.Core.ModRepository
 
             var modPath = Path.Combine(_rootContentPath, manifestEntry.Id);
             var modTomlPath = Path.Combine(modPath, "mod.toml");
-            if (!File.Exists(modTomlPath)) return false;
+            if (!File.Exists(modTomlPath))
+            {
+                modPath = Path.Combine(ModLibrary.LocalModsFolderPath, manifestEntry.Id);
+                modTomlPath = Path.Combine(modPath, "mod.toml");
+                if (!File.Exists(modTomlPath)) return false;
+            }
             var tomlConfig = TomletMain.To<RootConfig>(File.ReadAllText(modTomlPath));
             if (tomlConfig?.StarMap is not StarMapConfig starMapConfig)
             {

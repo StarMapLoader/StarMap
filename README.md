@@ -15,7 +15,12 @@ It makes use of Assembly Load Contexts to ensure mod dependencies are managed se
 
 ## Mod location
 
-Mods should be installed in the contents folder in the KSA installation, StarMap makes use of the
+Mods can be placed in either of these two locations:
+
+-   `Documents/My Games/Kitten Space Agency/mods/<ModName>/` (recommended, persists across game updates)
+-   `<KSA Installation>/Content/<ModName>/`
+
+StarMap uses the game's manifest system to discover mods from both locations.
 
 ## Mod creation
 

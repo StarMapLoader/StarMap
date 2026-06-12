@@ -40,10 +40,14 @@ namespace StarMap.Types
             }
 
             GameLocation = path;
+
+            GameArguments = config.GameArguments;
+            
             return true;
         }
 
         public string GameLocation { get; set; } = "";
         public string RepositoryLocation { get; set; } = "";
+        public string[] GameArguments { get; set; } = [];
     }
 }
