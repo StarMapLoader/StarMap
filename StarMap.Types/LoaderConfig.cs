@@ -6,22 +6,22 @@ namespace StarMap.Types
     {
         private static string FindConfigPath()
         {
-                var directory = new DirectoryInfo(AppContext.BaseDirectory);
+            var directory = new DirectoryInfo(AppContext.BaseDirectory);
 
-                while (directory is not null)
+            while (directory is not null)
+            {
+                var solutionPath = Path.Combine(directory.FullName, "StarMap.slnx");
+
+                if (File.Exists(solutionPath))
                 {
-                    var solutionPath = Path.Combine(directory.FullName, "StarMap.slnx");
-
-                    if (File.Exists(solutionPath))
-                    {
-                        return Path.Combine(directory.FullName, "StarMapConfig.json");
-                    }
-
-                    directory = directory.Parent;
+                    return Path.Combine(directory.FullName, "StarMapConfig.json");
                 }
 
-                // Installed/release layout: config resides beside the executable.
-                return Path.Combine(AppContext.BaseDirectory, "StarMapConfig.json");
+                directory = directory.Parent;
+                }
+
+            // Installed/release layout: config resides beside the executable.
+            return Path.Combine(AppContext.BaseDirectory, "StarMapConfig.json");
         }
 
         private static readonly string StarMapConfigPath = FindConfigPath();
