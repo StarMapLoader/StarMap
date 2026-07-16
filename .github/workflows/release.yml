@@ -7,11 +7,8 @@ on:
 
 env:
     DOTNET_VERSION: 10.0
-    STANDALONE_PROJECT: StarMap.Loader/StarMap.Loader.csproj
-    LAUNCHER_PROJECT: StarMap.Launcher/StarMap.Launcher.csproj
+    PROJECT: StarMap/StarMap.csproj
     API_PROJECT: StarMap.API/StarMap.API.csproj
-    STANDALONE_OUTPUT_PATH: ./publish/standalone
-    LAUNCHER_OUTPUT_PATH: ./publish/launcher
     OUTPUT_PATH: ./publish
     NUGET_SOURCE: "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
     EXCLUDE: "*.pdb *.xml"
@@ -86,42 +83,24 @@ jobs:
                     --store-password-in-clear-text \
                     --name github "${{ env.NUGET_SOURCE }}"
 
-            - name: Build launcher
-              run: |
-                  dotnet publish ${{ env.LAUNCHER_PROJECT }} \
-                    -c Release \
-                    -o ${{ env.LAUNCHER_OUTPUT_PATH }} \
-                    -r win-x64 \
-                    --self-contained false \
-                    /p:PackageVersion=${{ steps.version.outputs.new_version }} \
-                    /p:Version=${{ steps.version.outputs.new_version }} \
-                    /p:AssemblyVersion=${{ steps.version.outputs.new_version }} \
-                    /p:FileVersion=${{ steps.version.outputs.new_version }}
-
             - name: Build standalone
               run: |
-                  dotnet publish ${{ env.STANDALONE_PROJECT }} \
+                  dotnet publish ${{ env.PROJECT }} \
                     -c Release \
-                    -o ${{ env.STANDALONE_OUTPUT_PATH }} \
+                    -o ${{ env.OUTPUT_PATH }} \
                     -r win-x64 \
                     --self-contained false \
                     /p:PackageVersion=${{ steps.version.outputs.new_version }} \
                     /p:Version=${{ steps.version.outputs.new_version }} \
                     /p:AssemblyVersion=${{ steps.version.outputs.new_version }} \
                     /p:FileVersion=${{ steps.version.outputs.new_version }}
-
-            - name: Rename executables
-              run: |
-                  mv ${{ env.LAUNCHER_OUTPUT_PATH }}/StarMap.Launcher.exe ${{ env.LAUNCHER_OUTPUT_PATH }}/StarMap.exe
-                  mv ${{ env.STANDALONE_OUTPUT_PATH }}/StarMap.Loader.exe ${{ env.STANDALONE_OUTPUT_PATH }}/StarMap.exe
 
             - name: Upload build artifacts
               uses: actions/upload-artifact@v4
               with:
                   name: publish
                   path: |
-                      ${{ env.LAUNCHER_OUTPUT_PATH }}
-                      ${{ env.STANDALONE_OUTPUT_PATH }}
+                      ${{ env.OUTPUT_PATH }}
                       version.txt
                   retention-days: 1
 
@@ -216,16 +195,10 @@ jobs:
                   sudo apt-get update -y
                   sudo apt-get install -y zip
 
-            - name: Package launcher ZIP
+            - name: Package ZIP
               run: |
-                  cd ./build_artifacts/${{ env.LAUNCHER_OUTPUT_PATH }}
-                  zip -r $GITHUB_WORKSPACE/StarMapLauncher-${{ needs.build.outputs.new_version }}.zip . -x ${{ env.EXCLUDE }}
-                  cd -
-
-            - name: Package standalone ZIP
-              run: |
-                  cd ./build_artifacts/${{ env.STANDALONE_OUTPUT_PATH }}
-                  zip -r $GITHUB_WORKSPACE/StarMapStandalone-${{ needs.build.outputs.new_version }}.zip . -x ${{ env.EXCLUDE }}
+                  cd ./build_artifacts/${{ env.OUTPUT_PATH }}
+                  zip -r $GITHUB_WORKSPACE/StarMap-${{ needs.build.outputs.new_version }}.zip . -x ${{ env.EXCLUDE }}
                   cd -
 
             - name: Create GitHub Release
@@ -237,8 +210,7 @@ jobs:
                       Automated release for version ${{ needs.build.outputs.new_version }}
                       Triggered by PR #${{ github.event.pull_request.number }}
                   files: |
-                      StarMapLauncher-${{ needs.build.outputs.new_version }}.zip
-                      StarMapStandalone-${{ needs.build.outputs.new_version }}.zip
+                      StarMap-${{ needs.build.outputs.new_version }}.zip
 
     build-release-installer:
         runs-on: windows-latest

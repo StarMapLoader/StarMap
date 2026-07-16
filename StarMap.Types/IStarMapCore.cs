@@ -1,6 +1,4 @@
-﻿using System.Runtime.Loader;
-
-namespace StarMap.Types.Mods
+﻿namespace StarMap.Types
 {
     public interface IStarMapCore
     {
