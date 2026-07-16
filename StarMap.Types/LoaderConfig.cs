@@ -4,12 +4,8 @@ namespace StarMap.Types
 {
     public class LoaderConfig
     {
-
-        public bool TryLoadConfig()
+        private static string FindConfigPath()
         {
-
-            private static string FindConfigPath()
-            {
                 var directory = new DirectoryInfo(AppContext.BaseDirectory);
 
                 while (directory is not null)
@@ -26,9 +22,12 @@ namespace StarMap.Types
 
                 // Installed/release layout: config resides beside the executable.
                 return Path.Combine(AppContext.BaseDirectory, "StarMapConfig.json");
-            }
+        }
 
-            private static readonly string StarMapConfigPath = FindConfigPath();
+        private static readonly string StarMapConfigPath = FindConfigPath();
+
+        public bool TryLoadConfig()
+        {
 
 
             if (!File.Exists(StarMapConfigPath))
