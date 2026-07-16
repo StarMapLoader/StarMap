@@ -48,7 +48,7 @@ namespace StarMap.Types.Pipes
 
                     _ = Task.Run(() => OnMessage?.Invoke(this, message), cancellationToken);
                 }
-                catch (OperationCanceledException) { }
+                catch (OperationCanceledException e) { }
             }
         }
 
