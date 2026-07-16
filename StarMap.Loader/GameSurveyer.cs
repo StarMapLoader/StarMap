@@ -25,7 +25,7 @@ namespace StarMap
 
         public bool TryLoadCoreAndGame()
         {
-            var modManagerAssembly = _gameAssemblyContext.LoadFromAssemblyPath(Path.GetFullPath("./StarMap.Core.dll"));
+            var modManagerAssembly = _gameAssemblyContext.LoadFromAssemblyPath(Path.Combine(AppContext.BaseDirectory, "StarMap.Core.dll"));
 
             var starMapCore = modManagerAssembly.GetTypes().FirstOrDefault((type) => typeof(IStarMapCore).IsAssignableFrom(type) && !type.IsInterface);
             if (starMapCore is null) return false;
