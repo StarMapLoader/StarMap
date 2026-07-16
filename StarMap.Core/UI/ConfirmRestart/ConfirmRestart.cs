@@ -6,7 +6,7 @@ using Core;
 using KSA;
 using RenderCore;
 
-namespace StarMap.Core.UI
+namespace StarMap.Core.UI.ConfirmRestart
 {
     internal class ConfirmRestart : SetupTaskBase
     {

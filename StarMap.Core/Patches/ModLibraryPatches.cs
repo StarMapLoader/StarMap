@@ -4,6 +4,7 @@ using KSA;
 using StarMap.API;
 using StarMap.Core.ModRepository;
 using StarMap.Core.UI;
+using StarMap.Core.UI.ConfirmRestart;
 using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Reflection;

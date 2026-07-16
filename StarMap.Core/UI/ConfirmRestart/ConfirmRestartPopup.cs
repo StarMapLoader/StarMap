@@ -1,7 +1,7 @@
 ﻿using Brutal.ImGuiApi;
 using KSA;
 
-namespace StarMap.Core.UI
+namespace StarMap.Core.UI.ConfirmRestart
 {
     internal class ConfirmRestartPopup : Popup
     {
