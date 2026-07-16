@@ -7,14 +7,38 @@ namespace StarMap.Types
 
         public bool TryLoadConfig()
         {
-            if (!File.Exists("./StarMapConfig.json"))
+
+            private static string FindConfigPath()
+            {
+                var directory = new DirectoryInfo(AppContext.BaseDirectory);
+
+                while (directory is not null)
+                {
+                    var solutionPath = Path.Combine(directory.FullName, "StarMap.slnx");
+
+                    if (File.Exists(solutionPath))
+                    {
+                        return Path.Combine(directory.FullName, "StarMapConfig.json");
+                    }
+
+                    directory = directory.Parent;
+                }
+
+                // Installed/release layout: config resides beside the executable.
+                return Path.Combine(AppContext.BaseDirectory, "StarMapConfig.json");
+            }
+
+            private static readonly string StarMapConfigPath = FindConfigPath();
+
+
+            if (!File.Exists(StarMapConfigPath))
             {
                 Console.WriteLine("StarMap - Please fill the StarMapConfig.json and restart the program");
-                File.WriteAllText("./StarMapConfig.json", JsonSerializer.Serialize(new LoaderConfig(), new JsonSerializerOptions { WriteIndented = true }));
+                File.WriteAllText(StarMapConfigPath, JsonSerializer.Serialize(new LoaderConfig(), new JsonSerializerOptions { WriteIndented = true }));
                 return false;
             }
 
-            var jsonString = File.ReadAllText("./StarMapConfig.json");
+            var jsonString = File.ReadAllText(StarMapConfigPath);
             var config = JsonSerializer.Deserialize<LoaderConfig>(jsonString);
 
             if (config is null) return false;
