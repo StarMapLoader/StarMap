@@ -32,7 +32,7 @@ namespace StarMap
                 return;
             }
 
-            AssemblyLoadContext.Default.LoadFromAssemblyPath(Path.Combine(AppContext.BaseDirectory,"0Harmony.dll"));
+            AssemblyLoadContext.Default.LoadFromAssemblyPath(Path.Combine(AppContext.BaseDirectory, "0Harmony.dll"));
 
             var gameAssemblyContext = new GameAssemblyLoadContext(gameConfig.GameLocation);
             var dumbFacade = new SoloGameFacade();
@@ -48,7 +48,7 @@ namespace StarMap
 
         static async Task MainInner(string pipeName)
         {
-            AssemblyLoadContext.Default.LoadFromAssemblyPath(Path.GetFullPath("./0Harmony.dll"));
+            AssemblyLoadContext.Default.LoadFromAssemblyPath(Path.Combine(AppContext.BaseDirectory, "0Harmony.dll"));
 
             var pipeClient = new PipeClient(pipeName);
             var facade = new GameFacade(pipeClient);
