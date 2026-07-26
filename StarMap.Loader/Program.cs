@@ -8,7 +8,9 @@ namespace StarMap
     {
         static void Main(string[] args)
         {
-            if (args.Length < 1)
+            var (instanceOverrideArgs, remainingArgs) = ExtractInstanceOverride(args);
+
+            if (remainingArgs.Length < 1)
             {
                 Console.WriteLine("StarMap - Running Starmap in solo mode!");
                 SoleModeInner();
@@ -17,10 +19,33 @@ namespace StarMap
 
             Console.WriteLine("StarMap - Running Starmap in loader mode.");
 
-            var pipeName = args[0];
+            var pipeName = remainingArgs[0];
             Console.WriteLine($"StarMap - Connection to pipe: {pipeName}");
 
             MainInner(pipeName).GetAwaiter().GetResult();
+        }
+
+        private static (string[] instanceOverrideArgs, string[] remainingArgs) ExtractInstanceOverride(string[] args)
+        {
+            const string CliFlag = "-InstancePath";
+
+            var remaining = new List<string>();
+            var extracted = new List<string>();
+
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (string.Equals(args[i], CliFlag, StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+                {
+                    extracted.Add(args[i]);
+                    extracted.Add(args[i + 1]);
+                    i++; // skip the value too
+                    continue;
+                }
+
+                remaining.Add(args[i]);
+            }
+
+            return (extracted.ToArray(), remaining.ToArray());
         }
 
         static void SoleModeInner()
