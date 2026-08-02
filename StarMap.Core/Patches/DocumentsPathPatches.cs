@@ -6,7 +6,7 @@ namespace StarMap.Core.Patches
     internal static class DocumentsPathPatches
     {
         private const string CliFlag = "-InstancePath";
-        private const string EnvVarName = "INSTANCE_PATH";
+        private const string EnvVarName = "STARMAP_INSTANCE_PATH";
         private const string HarmonyId = "com.starmap.core.documentspathoverride";
 
         public static void Apply()
