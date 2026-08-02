@@ -9,7 +9,7 @@ namespace StarMap.Core
     {
         public static StarMapCore? Instance;
 
-        private readonly Harmony _harmony = new("StarMap.Core");
+        private readonly Harmony _harmony = new("com.starmap.core");
         private readonly AssemblyLoadContext _coreAssemblyLoadContext;
 
         private readonly ModLoader _loader;

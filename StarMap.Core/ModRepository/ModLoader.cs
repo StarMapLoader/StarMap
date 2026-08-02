@@ -1,6 +1,7 @@
 ﻿using KSA;
 using StarMap.API;
 using StarMap.Core.Config;
+using StarMap.Core.Patches;
 using System.Reflection;
 using System.Runtime.Loader;
 using Tomlet;
@@ -44,6 +45,7 @@ namespace StarMap.Core.ModRepository
 
         public void Init()
         {
+            DocumentsPathPatches.Apply();
             PrepareMods();
         }
 
@@ -60,7 +62,7 @@ namespace StarMap.Core.ModRepository
             {
                 if (!mod.Enabled)
                 {
-                    Console.WriteLine($"StarMap - Not loading mod: {mod.Id} because it is disable in manifest");
+                    Console.WriteLine($"StarMap - Not loading mod: {mod.Id} because it is disabled in manifest");
                     continue;
                 }
 
