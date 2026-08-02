@@ -5,22 +5,31 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <NoWarn>1591</NoWarn>
+        <NoWarn>1591;CS1734</NoWarn>
         <PackageReadmeFile>README.md</PackageReadmeFile>
+        <Configurations>Debug;Release;SourceNuget</Configurations>
     </PropertyGroup>
 
     <ItemGroup>
         <None Include="README.md" Pack="true" PackagePath="\" />
     </ItemGroup>
 
-    <ItemGroup Condition="'$(Configuration)' == 'Debug'">
-        <Reference Include="..\..\Import\KSA.dll" />
-    </ItemGroup>
+	<ItemGroup Condition="'$(Configuration)' == 'Debug'">
+		<Reference Include="..\..\Import\KSA.dll" />
+		<Reference Include="..\..\Import\Brutal.*.dll" />
+	</ItemGroup>
 
-    <ItemGroup Condition="'$(Configuration)' != 'Debug'">
-        <PackageReference Include="StarMap.KSA.Dummy" Version="1.0.22">
-            <IncludeAssets>compile; build; analyzers</IncludeAssets>
-            <PrivateAssets>all</PrivateAssets>
-        </PackageReference>
-    </ItemGroup>
+	<ItemGroup Condition="'$(Configuration)' == 'SourceNuget'">
+		<PackageReference Include="RocketWerkz.KSA" Version="2026.7.6.4939">
+			<IncludeAssets>compile; build; analyzers</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(Configuration)' == 'Release'">
+		<PackageReference Include="RocketWerkz.KSA.Ref" Version="2026.7.6.4939">
+			<IncludeAssets>compile; build; analyzers</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+	</ItemGroup>
 </Project>
