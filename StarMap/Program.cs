@@ -18,7 +18,7 @@ namespace StarMap
             AssemblyLoadContext.Default.LoadFromAssemblyPath(Path.GetFullPath("./0Harmony.dll"));
 
             var gameAssemblyContext = new CoreAssemblyLoadContext(gameConfig.GameLocation);
-            using var gameSurveyer = new GameSurveyer(gameAssemblyContext, gameConfig.GameLocation, args);
+            using var gameSurveyer = new GameSurveyer(gameAssemblyContext, gameConfig.GameLocation, [.. args, ..gameConfig.GameArguments]);
             if (!gameSurveyer.TryLoadCoreAndGame())
             {
                 Console.WriteLine("StarMap - Unable to load mod manager and game.");
