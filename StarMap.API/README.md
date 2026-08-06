@@ -220,3 +220,31 @@ Methods marked with this attribute will be called after `KSA.Program.OnFrame` is
 [StarMapAfterOnFrame]
 public void ModMethod(double currentPlayerTime, double dtPlayer);
 ```
+
+#### StarMapAfterSave
+
+Namespace: `StarMap.API`  
+Assembly: `StarMap.API`  
+Target: Method
+
+Methods marked with this attribute will be called after KSA has written a save, with the directory
+it was written to. A mod that keeps per-save state can write its own file beside `universe.xml`.
+
+```csharp
+[StarMapAfterSave]
+public void ModMethod(System.IO.DirectoryInfo saveDirectory);
+```
+
+#### StarMapAfterLoad
+
+Namespace: `StarMap.API`  
+Assembly: `StarMap.API`  
+Target: Method
+
+Methods marked with this attribute will be called after KSA has loaded a save, with the directory
+it was read from.
+
+```csharp
+[StarMapAfterLoad]
+public void ModMethod(System.IO.DirectoryInfo saveDirectory);
+```
