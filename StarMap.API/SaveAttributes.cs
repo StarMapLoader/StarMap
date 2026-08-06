@@ -17,8 +17,7 @@ namespace StarMap.API
     /// <list type="bullet">
     ///   <item>
     ///     <description>
-    ///       <paramref name="saveDirectory"/> is the folder the save was written to, so a mod can
-    ///       put its own file beside <c>universe.xml</c>.
+    ///       <paramref name="saveDirectory"/> is the folder the save was written to.
     ///     </description>
     ///   </item>
     /// </list>
@@ -53,8 +52,7 @@ namespace StarMap.API
     /// <list type="bullet">
     ///   <item>
     ///     <description>
-    ///       <paramref name="saveDirectory"/> is the folder the save was read from, so a mod can
-    ///       read its own file from beside <c>universe.xml</c>.
+    ///       <paramref name="saveDirectory"/> is the folder the save was read from.
     ///     </description>
     ///   </item>
     /// </list>

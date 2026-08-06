@@ -6,12 +6,7 @@ using StarMap.API;
 namespace StarMap.Core.Patches
 {
     /// <summary>
-    /// Tells mods when a save is written or read, and where.
-    ///
-    /// A save is a directory, so a mod that keeps per-save state can put a file beside
-    /// universe.xml. Without a hook the only way to notice is to poll that file's timestamp,
-    /// which leaves a window: save and load inside it and the mod writes nothing for that save,
-    /// then writes over it afterwards.
+    /// Tells mods when a save is written or read, and which directory it is in.
     /// </summary>
     [HarmonyPatch(typeof(UniverseData))]
     internal static class UniverseDataPatcher
