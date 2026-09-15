@@ -18,10 +18,11 @@ namespace StarMap.Core.ModRepository
 
         public required string ModId { get; init; }
         public required ModAssemblyLoadContext ModAssemblyLoadContext { get; init; }
-        public required Type ModType { get; init; }
         public required StarMapConfig Config { get; init; }
+        public required Assembly ModAssembly { get; init; }
 
         public bool Initialized { get; set; } = false;
+        public Type? ModType { get; set; }
         public object? ModInstance { get; set; } = null;
 
         public HashSet<string> ExportedAssemblies { get; set; } = [];
@@ -61,14 +62,11 @@ namespace StarMap.Core.ModRepository
             var modLoadContext = new ModAssemblyLoadContext(manifestEntry.Id, modAssemblyFile, coreALC);
             var modAssembly = modLoadContext.LoadFromAssemblyName(new AssemblyName() { Name = starMapConfig.EntryAssembly });
 
-            var modClass = modAssembly.GetTypes().FirstOrDefault(type => type.GetCustomAttributes().Any(attr => attr.GetType().Name == typeof(StarMapModAttribute).Name));
-            if (modClass is null) return false;
-
             runtimeMod = new RuntimeMod
             {
                 ModId = manifestEntry.Id,
                 ModAssemblyLoadContext = modLoadContext,
-                ModType = modClass,
+                ModAssembly = modAssembly,
                 Config = starMapConfig,
             };
 
@@ -130,6 +128,11 @@ namespace StarMap.Core.ModRepository
 
         public bool InitializeMod(ModRegistry modRegistry)
         {
+            var modClass = ModAssembly.GetTypes().FirstOrDefault(type => type.GetCustomAttributes().Any(attr => attr.GetType().Name == typeof(StarMapModAttribute).Name));
+            if (modClass is null) return false;
+
+            ModType = modClass;
+
             var modObject = Activator.CreateInstance(ModType);
             if (modObject is null) return false;
             ModInstance = modObject;

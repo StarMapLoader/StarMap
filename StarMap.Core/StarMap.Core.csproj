@@ -25,13 +25,13 @@
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(Configuration)' == 'SourceNuget'">
-		<PackageReference Include="RocketWerkz.KSA" Version="2026.7.6.4939">
+		<PackageReference Include="RocketWerkz.KSA" Version="2026.9.10.5438">
 			<ExcludeAssets>runtime</ExcludeAssets>
 		</PackageReference>
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(Configuration)' == 'Release'">
-		<PackageReference Include="RocketWerkz.KSA.Ref" Version="2026.7.6.4939">
+		<PackageReference Include="RocketWerkz.KSA.Ref" Version="2026.9.10.5438">
 			<ExcludeAssets>runtime</ExcludeAssets>
 		</PackageReference>
 	</ItemGroup>

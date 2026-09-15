@@ -32,7 +32,7 @@ namespace StarMap.Core.UI.ConfirmRestart
         {
             if (!Show)
                 return;
-            ImGuiHelper.BlankBackground();
+            ImGuiHelper.BlankBackground(ImGuiHelper.GetMainOverlayDrawList());
             Popup.DrawAll();
         }
 

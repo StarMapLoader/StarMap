@@ -1,10 +1,13 @@
 ﻿using Brutal.ImGuiApi;
+using Brutal.Numerics;
 using KSA;
 
 namespace StarMap.Core.UI.ConfirmRestart
 {
     internal class ConfirmRestartPopup : Popup
     {
+        private static readonly float2 SIZE_UV = new float2(0.32f, 0.213333f);
+
         private readonly string _title;
         public ConfirmRestart UI { get; }
         private static readonly PopupButton<ConfirmRestartPopup> PopupButtonContinue = CreateButton("Continue", (Action<ConfirmRestartPopup>)(popup =>
@@ -20,7 +23,7 @@ namespace StarMap.Core.UI.ConfirmRestart
             popup.UI.Show = false;
         }));
 
-        private static readonly IPopupWidget<ConfirmRestartPopup>[] ButtonMatrix = [
+        private static readonly PopupButton<ConfirmRestartPopup>[] ButtonMatrix = [
             PopupButtonContinue,
             PopupButtonRestart
         ];
@@ -35,15 +38,14 @@ namespace StarMap.Core.UI.ConfirmRestart
 
         protected override void OnDrawUi()
         {
-            ImGui.OpenPopup((ImString)_title);
-            ImGui.BeginPopup((ImString)_title, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.Popup);
-            ImGuiHelper.SetCurrentWindowToCenter();
-            var text1 = new ImString(60, 1);
-            text1.AppendLiteral("New mods have been enabled after starting KSA.\nThe game needs to be restarted for these mods to be loaded in StarMap.".AsSpan());
-            ImGui.TextWrapped(text1);
-            ImGui.Separator();
-            DrawUi(this, ButtonMatrix);
-            ImGui.EndPopup();
+            if (!BeginConsoleModal(WindowId.AsSpan(), _title.AsSpan(), SIZE_UV))
+                return;
+            ConsoleStyle.BeginBody();
+            ConsoleStyle.PushWidgetStyle();
+            CenteredWrappedText("New mods have been enabled after starting KSA.\nThe game needs to be restarted for these mods to be loaded in StarMap.".AsSpan());
+            EndConsoleBody();
+            DrawConsoleButtonRow<ConfirmRestartPopup>(this, ButtonMatrix);
+            EndConsoleModal();
         }
     }
 }
