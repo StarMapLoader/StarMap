@@ -18,7 +18,7 @@ namespace StarMap.Core.ModRepository
 
     internal sealed class ModsLoader:IModsLoader
     {
-        private readonly ICoreSerivce _coreService;
+        private readonly ICoreService _coreService;
         private readonly AssemblyLoadContext _coreAssemblyLoadContext;
         private readonly IPatchManager _patchManager;
 
@@ -34,7 +34,7 @@ namespace StarMap.Core.ModRepository
             return (attrType.Name, attrObject);
         }
 
-        public ModsLoader(ICoreSerivce coreService, IPatchManager patchManager)
+        public ModsLoader(ICoreService coreService, IPatchManager patchManager)
         {
             _coreService = coreService;
             _coreAssemblyLoadContext = coreService.CoreAssemblyLoadContext;

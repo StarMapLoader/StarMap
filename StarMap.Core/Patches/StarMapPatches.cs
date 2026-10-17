@@ -1,31 +1,31 @@
 ﻿using HarmonyLib;
 using KSA;
-using StarMap.API;
 using StarMap.API.Interfaces;
-using StarMap.Core.ModRepository;
 using StarMap.Core.UI.ConfirmRestart;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Reflection;
-using System.Text;
 
 namespace StarMap.Core.Patches
 {
-    internal class StarMapPatches
+    internal interface IStarMapPatches
     {
-        private ModRegistry _registry;
+        void Init();
+    }
 
-        public StarMapPatches(ModRegistry registry, PatchManager patchManager)
+    internal class StarMapPatches : IStarMapPatches
+    {
+        private readonly IPatchManager _patchManager;
+
+        public StarMapPatches(IPatchManager patchManager)
         {
-            _registry = registry;
+            _patchManager = patchManager;
+        }
 
-            patchManager.RegisterStaticVoidPatch(IPatchHelper.PatchType.Prefix, null, typeof(ModLibrary).GetMethod(nameof(ModLibrary.LoadAll))!, BeforePrepareAll);
+        public void Init()
+        {
+            _patchManager.RegisterStaticVoidPatch(IPatchHelper.PatchType.Prefix, null, typeof(ModLibrary).GetMethod(nameof(ModLibrary.LoadAll))!, BeforePrepareAll);
 
             if (DocumentsPathOverride.ShouldApplyOverride())
-                patchManager.RegisterStaticPatch<string>(IPatchHelper.PatchType.Prefix, null, AccessTools.PropertyGetter(typeof(Constants), nameof(Constants.DocumentsFolderPath)), DocumentsPathOverride.BeforeDocumentsFolderPath);
-
-
+                _patchManager.RegisterStaticPatch<string>(IPatchHelper.PatchType.Prefix, null, AccessTools.PropertyGetter(typeof(Constants), nameof(Constants.DocumentsFolderPath)), DocumentsPathOverride.BeforeDocumentsFolderPath);
         }
 
         private bool BeforePrepareAll(object[] _)
@@ -74,7 +74,7 @@ namespace StarMap.Core.Patches
                 }
             }
 
-            return false;
+            return true;
         }
     }
 }

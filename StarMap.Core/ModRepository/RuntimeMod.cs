@@ -129,14 +129,14 @@ namespace StarMap.Core.ModRepository
             return dependency.ExportedAssemblies.Intersect(dependencyInfo.ImportedAssemblies);
         }
 
-        public bool InitializeMod(ModRegistry modRegistry, ICoreSerivce core, IPatchManager patchManager)
+        public bool InitializeMod(ModRegistry modRegistry, ICoreService core, IPatchManager patchManager)
         {
             var modClass = ModAssembly.GetTypes().FirstOrDefault(type => type.GetCustomAttributes().Any(attr => attr.GetType().Name == typeof(StarMapModAttribute).Name));
             if (modClass is null) return false;
 
             ModType = modClass;
 
-            var services = core.CreadeModDependencies(this);
+            var services = core.CreateModDependencies(this);
             var modObject = ActivatorUtilities.CreateInstance(services, ModType);
             if (modObject is null) return false;
             ModInstance = modObject;
@@ -172,10 +172,10 @@ namespace StarMap.Core.ModRepository
                             patchManager.RegisterInstanceVoidPatch<Mod>(IPatchHelper.PatchType.Prefix, this, typeof(KSA.Mod).GetMethod(nameof(Mod.PrepareSystems))!,
                                 (args, mod) =>
                                 {
-                                    if (mod.Equals(modObject))
-                                        classMethod.Invoke(modObject, args);
+                                    if (mod.Id.Equals(ModId))
+                                        classMethod.Invoke(modObject, [mod]);
 
-                                    return false;
+                                    return true;
                                 });
                             break;
                         case StarMapAfterOnFrameAttribute:
@@ -184,7 +184,7 @@ namespace StarMap.Core.ModRepository
                                 {
                                     classMethod.Invoke(modObject, [args[0], args[1]]);
 
-                                    return false;
+                                    return true;
                                 });
                             break;
                         case StarMapBeforeGuiAttribute:
@@ -193,7 +193,7 @@ namespace StarMap.Core.ModRepository
                                 {
                                     classMethod.Invoke(modObject, [args[0]]);
 
-                                    return false;
+                                    return true;
                                 });
                             break;
                         case StarMapAfterGuiAttribute:
@@ -202,7 +202,7 @@ namespace StarMap.Core.ModRepository
                                 {
                                     classMethod.Invoke(modObject, [args[0]]);
 
-                                    return false;
+                                    return true;
                                 });
                             break;
                     }

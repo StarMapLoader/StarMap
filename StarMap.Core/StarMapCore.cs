@@ -8,15 +8,17 @@ using System.Runtime.Loader;
 
 namespace StarMap.Core
 {
-    internal interface ICoreSerivce
+    internal interface ICoreService
     {
         AssemblyLoadContext CoreAssemblyLoadContext { get; }
-        IServiceProvider CreadeModDependencies(RuntimeMod mod);
+        IServiceProvider CreateModDependencies(RuntimeMod mod);
     }
 
-    internal class StarMapCore : IStarMapCore, ICoreSerivce
+    internal class StarMapCore : IStarMapCore, ICoreService
     {
         private readonly IServiceProvider _serviceProvider;
+        private readonly Lock _lock = new();
+        private readonly List<IServiceScope> _modScopes = [];
 
         private readonly AssemblyLoadContext _coreAssemblyLoadContext;
 
@@ -27,9 +29,10 @@ namespace StarMap.Core
             _coreAssemblyLoadContext = coreAssemblyLoadContext;
 
             var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton<ICoreSerivce>(this);
+            serviceCollection.AddSingleton<ICoreService>(this);
             serviceCollection.AddSingleton<IPatchManager, PatchManager>();
             serviceCollection.AddSingleton<IModsLoader, ModsLoader>();
+            serviceCollection.AddSingleton<IStarMapPatches, StarMapPatches>();
 
             serviceCollection.AddScoped<IModContext, ModContext>();
             serviceCollection.AddScoped<IPatchHelper, PatchHelper>();
@@ -39,19 +42,34 @@ namespace StarMap.Core
 
         public void Init()
         {
+            _serviceProvider.GetRequiredService<IStarMapPatches>().Init();
             _serviceProvider.GetRequiredService<IModsLoader>().Init();
         }
 
         public void DeInit()
         {
+            lock (_lock)
+            {
+                foreach(var scope in _modScopes) 
+                {
+                    scope.Dispose();
+                }
+            }
+
             _serviceProvider.GetRequiredService<IModsLoader>().Dispose();
         }
 
-        public IServiceProvider CreadeModDependencies(RuntimeMod mod)
+        public IServiceProvider CreateModDependencies(RuntimeMod mod)
         {
             var scope = _serviceProvider.CreateScope();
 
             scope.ServiceProvider.GetRequiredService<IModContext>().Mod = mod;
+
+            lock (_lock)
+            {
+                _modScopes.Add(scope);
+            }
+
             return scope.ServiceProvider;
         }
 

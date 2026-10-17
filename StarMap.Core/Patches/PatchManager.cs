@@ -3,10 +3,11 @@ using StarMap.API.Interfaces;
 using StarMap.Core.ModRepository;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 
 namespace StarMap.Core.Patches
 {
-    internal interface IPatchManager
+    internal interface IPatchManager : IDisposable
     {
         void RegisterInstancePatch<T, U>(IPatchHelper.PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchHelper.InstanceCallback<T, U> callback);
         void RegisterInstanceVoidPatch<T>(IPatchHelper.PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchHelper.InstanceVoidCallback<T> callback);
@@ -17,8 +18,6 @@ namespace StarMap.Core.Patches
     internal class PatchManager : IPatchManager
     {
         private static PatchManager? _instance;
-        public static HarmonyMethod PrefixEntryPoint { get; } = new HarmonyMethod(typeof(PatchManager).GetMethod(nameof(PrefixPatchEntryPoint), BindingFlags.Static | BindingFlags.Public));
-        public static HarmonyMethod PostfixEntryPoint { get; } = new HarmonyMethod(typeof(PatchManager).GetMethod(nameof(PostfixPatchEntryPoint), BindingFlags.Static | BindingFlags.Public));
         public static HarmonyMethod PrefixEntryPointVoid { get; } = new HarmonyMethod(typeof(PatchManager).GetMethod(nameof(PrefixPatchEntryPointVoid), BindingFlags.Static | BindingFlags.Public));
         public static HarmonyMethod PostfixEntryPointVoid { get; } = new HarmonyMethod(typeof(PatchManager).GetMethod(nameof(PostfixPatchEntryPointVoid), BindingFlags.Static | BindingFlags.Public));
 
@@ -100,13 +99,28 @@ namespace StarMap.Core.Patches
             return _instance?.PatchEntryPoint(HarmonyPatchType.Prefix, __originalMethod, __args, __instance, ref result) ?? true;
         }
 
-        public static bool PrefixPatchEntryPoint(
+        public static HarmonyMethod GetPrefixEntryPoint(Type resultType)
+        {
+            var method = typeof(PatchManager).GetMethod(nameof(PrefixPatchEntryPoint), BindingFlags.Static | BindingFlags.Public)!;
+            return new HarmonyMethod(method.MakeGenericMethod(resultType));
+        }
+
+        public static HarmonyMethod GetPostfixEntryPoint(Type resultType)
+        {
+            var method = typeof(PatchManager).GetMethod(nameof(PostfixPatchEntryPoint), BindingFlags.Static | BindingFlags.Public)!;
+            return new HarmonyMethod(method.MakeGenericMethod(resultType));
+        }
+
+        public static bool PrefixPatchEntryPoint<T>(
             MethodBase __originalMethod,
             object[] __args,
             object? __instance,
-            ref object? __result)
+            ref T __result)
         {
-            return _instance?.PatchEntryPoint(HarmonyPatchType.Prefix, __originalMethod, __args, __instance, ref __result) ?? true;
+            object? result = __result;
+            var outcome = _instance?.PatchEntryPoint(HarmonyPatchType.Prefix, __originalMethod, __args, __instance, ref result) ?? true;
+            __result = IPatchCallback.CastValue<T>(result, nameof(__result));
+            return outcome;
         }
 
         public static void PostfixPatchEntryPointVoid(
@@ -119,13 +133,23 @@ namespace StarMap.Core.Patches
             _instance?.PatchEntryPoint(HarmonyPatchType.Postfix, __originalMethod, __args, __instance, ref result);
         }
 
-        public static void PostfixPatchEntryPoint(
+        public static void PostfixPatchEntryPoint<T>(
             MethodBase __originalMethod,
             object[] __args,
             object? __instance,
-            ref object? __result)
+            ref T __result)
         {
-            _instance?.PatchEntryPoint(HarmonyPatchType.Postfix, __originalMethod, __args, __instance, ref __result);
+            object? result = __result;
+            _instance?.PatchEntryPoint(HarmonyPatchType.Postfix, __originalMethod, __args, __instance, ref result);
+            __result = IPatchCallback.CastValue<T>(result, nameof(__result));
+        }
+
+        public void Dispose()
+        {
+            foreach(var patch in _patches)
+            {
+                patch.Value.Dispose();
+            }
         }
     }
 
@@ -147,10 +171,15 @@ namespace StarMap.Core.Patches
     }
 
     internal interface IVoidCallback : IPatchCallback { }
-    internal interface IResultCallback : IPatchCallback { }
+    internal interface IResultCallback : IPatchCallback
+    {
+        Type ResultType { get; }
+    }
 
     internal class InstanceCallback<T, U>(IPatchHelper.InstanceCallback<T, U> callback) : IResultCallback
     {
+        public Type ResultType => typeof(U);
+
         public bool Invoke(object[] args, object? instance, ref object? result)
         {
             var typedInstance = IPatchCallback.CastValue<T>(instance, nameof(instance));
@@ -174,6 +203,8 @@ namespace StarMap.Core.Patches
 
     internal class StaticCallback<U>(IPatchHelper.StaticCallback<U> callback) : IResultCallback
     {
+        public Type ResultType => typeof(U);
+
         public bool Invoke(object[] args, object? instance, ref object? result)
         {
             var typedResult = IPatchCallback.CastValue<U>(result, nameof(result));
@@ -195,7 +226,7 @@ namespace StarMap.Core.Patches
 
 
 
-    internal class MethodPatch
+    internal class MethodPatch : IDisposable
     {
         private readonly Harmony _harmony;
         private readonly MethodBase _method;
@@ -211,6 +242,13 @@ namespace StarMap.Core.Patches
 
         public void RegisterPatch(IPatchHelper.PatchType type, RuntimeMod? mod, IPatchCallback patchCallback)
         {
+            if (patchCallback is IResultCallback resultCallback && GetReturnType() != resultCallback.ResultType)
+            {
+                throw new ArgumentException(
+                    $"Result callback type '{resultCallback.ResultType}' does not match the return type '{GetReturnType()}' of '{_method}'.",
+                    nameof(patchCallback));
+            }
+
             switch (type)
             {
                 case IPatchHelper.PatchType.Prefix:
@@ -251,7 +289,7 @@ namespace StarMap.Core.Patches
 
             foreach (var (_, callback) in GetActions(type))
             {
-                if (callback.Invoke(args, instance, ref result))
+                if (!callback.Invoke(args, instance, ref result))
                 {
                     callNext = false;
                     break;
@@ -282,15 +320,11 @@ namespace StarMap.Core.Patches
 
             if (_prefixPatch is null)
             {
-                if (callback is IVoidCallback)
-                {
-                    _prefixPatch = _harmony.Patch(_method, prefix: PatchManager.PrefixEntryPointVoid);
-                }
-
-                if (callback is IResultCallback)
-                {
-                    _prefixPatch = _harmony.Patch(_method, prefix: PatchManager.PrefixEntryPoint);
-                }
+                var returnType = GetReturnType();
+                var prefix = returnType == typeof(void)
+                    ? PatchManager.PrefixEntryPointVoid
+                    : PatchManager.GetPrefixEntryPoint(returnType);
+                _prefixPatch = _harmony.Patch(_method, prefix: prefix);
             }
         }
 
@@ -305,16 +339,17 @@ namespace StarMap.Core.Patches
 
             if (_postfixPatch is null)
             {
-                if (callback is IVoidCallback)
-                {
-                    _postfixPatch = _harmony.Patch(_method, postfix: PatchManager.PostfixEntryPointVoid);
-                }
-
-                if (callback is IResultCallback)
-                {
-                    _postfixPatch = _harmony.Patch(_method, postfix: PatchManager.PostfixEntryPoint);
-                }
+                var returnType = GetReturnType();
+                var postfix = returnType == typeof(void)
+                    ? PatchManager.PostfixEntryPointVoid
+                    : PatchManager.GetPostfixEntryPoint(returnType);
+                _postfixPatch = _harmony.Patch(_method, postfix: postfix);
             }
+        }
+
+        private Type GetReturnType()
+        {
+            return _method is MethodInfo methodInfo ? methodInfo.ReturnType : typeof(void);
         }
 
         private void RemovePrefix(RuntimeMod? mod)
@@ -335,6 +370,22 @@ namespace StarMap.Core.Patches
             {
                 _harmony.Unpatch(_method, _postfixPatch);
             }
+        }
+
+        public void Dispose()
+        {
+            if (PrefixActions.Count > 0)
+            {
+                _harmony.Unpatch(_method, _prefixPatch);
+                PrefixActions.Clear();
+            }
+
+            if (PostfixActions.Count > 0)
+            {
+                _harmony.Unpatch(_method, _postfixPatch);
+                PostfixActions.Clear();
+            }
+
         }
 
         public List<(RuntimeMod? mod, IPatchCallback callback)> PrefixActions { get; } = [];
