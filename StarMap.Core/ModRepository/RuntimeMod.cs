@@ -164,7 +164,7 @@ namespace StarMap.Core.ModRepository
                                 args =>
                                 {
                                 classMethod.Invoke(modObject, args);
-                                return false;
+                                return true;
                             });
                             break;
 
