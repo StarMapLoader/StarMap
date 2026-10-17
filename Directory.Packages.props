@@ -1,0 +1,12 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="Lib.Harmony" Version="2.4.2" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.13" />
+    <PackageVersion Include="Samboy063.Tomlet" Version="6.1.0" />
+    <PackageVersion Include="RocketWerkz.KSA" Version="2026.10.13.5602" />
+    <PackageVersion Include="RocketWerkz.KSA.Ref" Version="2026.9.10.5438" />
+  </ItemGroup>
+</Project>

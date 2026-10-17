@@ -1,6 +1,9 @@
 ﻿using KSA;
+using Microsoft.Extensions.DependencyInjection;
 using StarMap.API;
+using StarMap.API.Interfaces;
 using StarMap.Core.Config;
+using StarMap.Core.Patches;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -126,14 +129,15 @@ namespace StarMap.Core.ModRepository
             return dependency.ExportedAssemblies.Intersect(dependencyInfo.ImportedAssemblies);
         }
 
-        public bool InitializeMod(ModRegistry modRegistry)
+        public bool InitializeMod(ModRegistry modRegistry, ICoreSerivce core, IPatchManager patchManager)
         {
             var modClass = ModAssembly.GetTypes().FirstOrDefault(type => type.GetCustomAttributes().Any(attr => attr.GetType().Name == typeof(StarMapModAttribute).Name));
             if (modClass is null) return false;
 
             ModType = modClass;
 
-            var modObject = Activator.CreateInstance(ModType);
+            var services = core.CreadeModDependencies(this);
+            var modObject = ActivatorUtilities.CreateInstance(services, ModType);
             if (modObject is null) return false;
             ModInstance = modObject;
             Initialized = true;
@@ -142,14 +146,66 @@ namespace StarMap.Core.ModRepository
 
             foreach (var classMethod in classMethods)
             {
-                var stringAttrs = classMethod.GetCustomAttributes().Select((attr) => attr.GetType().Name).Where(ModLoader.RegisteredMethodAttributes.Keys.Contains);
+                var stringAttrs = classMethod.GetCustomAttributes().Select((attr) => attr.GetType().Name).Where(ModsLoader.RegisteredMethodAttributes.Keys.Contains);
                 foreach (var stringAttr in stringAttrs)
                 {
-                    var attr = ModLoader.RegisteredMethodAttributes[stringAttr];
+                    var attr = ModsLoader.RegisteredMethodAttributes[stringAttr];
 
                     if (!attr.IsValidSignature(classMethod)) continue;
 
-                    modRegistry.AddModMethod(ModId, attr, modObject, classMethod);
+                    switch (attr)
+                    {
+                        case StarMapBeforeMainAttribute:
+                        case StarMapUnloadAttribute:
+                            modRegistry.AddModMethod(ModId, attr, modObject, classMethod);
+                            break;
+                        case StarMapAllModsLoadedAttribute:
+                            patchManager.RegisterStaticVoidPatch(IPatchHelper.PatchType.Postfix, this, typeof(KSA.ModLibrary).GetMethod(nameof(ModLibrary.LoadAll))!, 
+                                args =>
+                                {
+                                classMethod.Invoke(modObject, args);
+                                return false;
+                            });
+                            break;
+
+                        case StarMapImmediateLoadAttribute:
+                            patchManager.RegisterInstanceVoidPatch<Mod>(IPatchHelper.PatchType.Prefix, this, typeof(KSA.Mod).GetMethod(nameof(Mod.PrepareSystems))!,
+                                (args, mod) =>
+                                {
+                                    if (mod.Equals(modObject))
+                                        classMethod.Invoke(modObject, args);
+
+                                    return false;
+                                });
+                            break;
+                        case StarMapAfterOnFrameAttribute:
+                            patchManager.RegisterInstanceVoidPatch<Program>(IPatchHelper.PatchType.Postfix, this, typeof(Program).GetMethod("OnFrame")!,
+                                (args, mod) =>
+                                {
+                                    classMethod.Invoke(modObject, [args[0], args[1]]);
+
+                                    return false;
+                                });
+                            break;
+                        case StarMapBeforeGuiAttribute:
+                            patchManager.RegisterInstanceVoidPatch<Program>(IPatchHelper.PatchType.Prefix, this, typeof(Program).GetMethod("OnDrawUiFrame", BindingFlags.NonPublic | BindingFlags.Instance)!,
+                                (args, mod) =>
+                                {
+                                    classMethod.Invoke(modObject, [args[0]]);
+
+                                    return false;
+                                });
+                            break;
+                        case StarMapAfterGuiAttribute:
+                            patchManager.RegisterInstanceVoidPatch<Program>(IPatchHelper.PatchType.Postfix, this, typeof(Program).GetMethod("OnDrawUiViewports", BindingFlags.NonPublic | BindingFlags.Instance)!,
+                                (args, mod) =>
+                                {
+                                    classMethod.Invoke(modObject, [args[0]]);
+
+                                    return false;
+                                });
+                            break;
+                    }
                 }
             }
 

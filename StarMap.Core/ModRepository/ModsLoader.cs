@@ -1,5 +1,8 @@
 ﻿using KSA;
+using Microsoft.Extensions.DependencyInjection;
 using StarMap.API;
+using StarMap.API.Interfaces;
+using StarMap.Core.API;
 using StarMap.Core.Config;
 using StarMap.Core.Patches;
 using System.Reflection;
@@ -8,9 +11,16 @@ using Tomlet;
 
 namespace StarMap.Core.ModRepository
 {
-    internal sealed class ModLoader : IDisposable
+    internal interface IModsLoader: IDisposable
     {
+        void Init();
+    }
+
+    internal sealed class ModsLoader:IModsLoader
+    {
+        private readonly ICoreSerivce _coreService;
         private readonly AssemblyLoadContext _coreAssemblyLoadContext;
+        private readonly IPatchManager _patchManager;
 
         public static Dictionary<string, StarMapMethodAttribute> RegisteredMethodAttributes = [];
 
@@ -24,9 +34,12 @@ namespace StarMap.Core.ModRepository
             return (attrType.Name, attrObject);
         }
 
-        public ModLoader(AssemblyLoadContext coreAssemblyLoadContext)
+        public ModsLoader(ICoreSerivce coreService, IPatchManager patchManager)
         {
-            _coreAssemblyLoadContext = coreAssemblyLoadContext;
+            _coreService = coreService;
+            _coreAssemblyLoadContext = coreService.CoreAssemblyLoadContext;
+            _patchManager = patchManager;
+
 
             Assembly coreAssembly = typeof(StarMapModAttribute).Assembly;
 
@@ -45,7 +58,6 @@ namespace StarMap.Core.ModRepository
 
         public void Init()
         {
-            DocumentsPathPatches.Apply();
             PrepareMods();
         }
 
@@ -77,7 +89,7 @@ namespace StarMap.Core.ModRepository
                     continue;
                 }
 
-                if (!runtimeMod.InitializeMod(ModRegistry))
+                if (!runtimeMod.InitializeMod(ModRegistry, _coreService, _patchManager))
                 {
                     Console.WriteLine($"StarMap - Failed to initialize mod: {runtimeMod.ModId} from manifest");
                     continue;
@@ -89,7 +101,7 @@ namespace StarMap.Core.ModRepository
                 
                 foreach (var dependentMod in dependentMods)
                 {
-                    if (dependentMod.InitializeMod(ModRegistry))
+                    if (dependentMod.InitializeMod(ModRegistry, _coreService, _patchManager))
                     {
                         Console.WriteLine($"StarMap - Loaded mod: {dependentMod.ModId} after loading {runtimeMod.ModId}");
                     }
@@ -117,7 +129,7 @@ namespace StarMap.Core.ModRepository
                         loadedMod = true;
                         ModRegistry.WaitingMods.Remove(waitingMod);
 
-                        if (waitingMod.InitializeMod(ModRegistry))
+                        if (waitingMod.InitializeMod(ModRegistry, _coreService, _patchManager))
                         {
                             Console.WriteLine($"StarMap - Loaded mod: {waitingMod.ModId} after all mods were loaded, not loaded optional mods: {string.Join(",", waitingMod.NotLoadedModDependencies.Values.Select(mod => mod.ModId))}");
                         }
