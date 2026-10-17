@@ -324,7 +324,8 @@ namespace StarMap.Core.Patches
                 var prefix = returnType == typeof(void)
                     ? PatchManager.PrefixEntryPointVoid
                     : PatchManager.GetPrefixEntryPoint(returnType);
-                _prefixPatch = _harmony.Patch(_method, prefix: prefix);
+                _harmony.Patch(_method, prefix: prefix);
+                _prefixPatch = prefix.method;
             }
         }
 
@@ -343,7 +344,8 @@ namespace StarMap.Core.Patches
                 var postfix = returnType == typeof(void)
                     ? PatchManager.PostfixEntryPointVoid
                     : PatchManager.GetPostfixEntryPoint(returnType);
-                _postfixPatch = _harmony.Patch(_method, postfix: postfix);
+                _harmony.Patch(_method, postfix: postfix);
+                _postfixPatch = postfix.method;
             }
         }
 
@@ -359,6 +361,7 @@ namespace StarMap.Core.Patches
             if (PrefixActions.Count == 0)
             {
                 _harmony.Unpatch(_method, _prefixPatch);
+                _prefixPatch = null;
             }
         }
 
@@ -369,6 +372,7 @@ namespace StarMap.Core.Patches
             if (PostfixActions.Count == 0)
             {
                 _harmony.Unpatch(_method, _postfixPatch);
+                _postfixPatch = null;
             }
         }
 
