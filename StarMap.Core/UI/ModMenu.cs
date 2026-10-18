@@ -85,6 +85,8 @@ namespace StarMap.Core.UI
         private readonly string _label;
         private readonly Action _action;
 
+        private bool _disposed;
+
         public ModMenuButton(ModMenu menu, string label, Action action)
         {
             _menu = menu;
@@ -100,6 +102,11 @@ namespace StarMap.Core.UI
 
         public void Dispose()
         {
+            var disposed = Interlocked.Exchange(ref _disposed, true);
+
+            if (disposed)
+                return;
+
             _menu.RemoveModMenuButton(_label);
         }
     }
