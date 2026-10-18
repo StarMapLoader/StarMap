@@ -37,8 +37,8 @@ namespace StarMap.Core
             serviceCollection.AddSingleton<IModMenu, ModMenu>();
 
             serviceCollection.AddScoped<IModContext, ModContext>();
-            serviceCollection.AddScoped<IPatchHelper, PatchHelper>();
-            serviceCollection.AddScoped<IModMenuService, ModMenuRegistry>();
+            serviceCollection.AddScoped<IPatchService, PatchService>();
+            serviceCollection.AddScoped<IModMenuService, ModMenuService>();
 
             _serviceProvider = serviceCollection.BuildServiceProvider();
         }

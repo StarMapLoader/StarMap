@@ -36,7 +36,7 @@ namespace StarMap.Core.UI
             _patchManager = patchManager;
 
             _patchManager.RegisterInstanceVoidPatch<Program>(
-                IPatchHelper.PatchType.Prefix,
+                IPatchService.PatchType.Prefix,
                 null,
                 typeof(Program).GetMethod("DrawProgramMenusHook")!,
                 CreateMenu);

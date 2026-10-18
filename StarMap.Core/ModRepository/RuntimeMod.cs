@@ -160,7 +160,7 @@ namespace StarMap.Core.ModRepository
                             modRegistry.AddModMethod(ModId, attr, modObject, classMethod);
                             break;
                         case StarMapAllModsLoadedAttribute:
-                            patchManager.RegisterStaticVoidPatch(IPatchHelper.PatchType.Postfix, this, typeof(KSA.ModLibrary).GetMethod(nameof(ModLibrary.LoadAll))!, 
+                            patchManager.RegisterStaticVoidPatch(IPatchService.PatchType.Postfix, this, typeof(KSA.ModLibrary).GetMethod(nameof(ModLibrary.LoadAll))!, 
                                 args =>
                                 {
                                 classMethod.Invoke(modObject, args);
@@ -169,7 +169,7 @@ namespace StarMap.Core.ModRepository
                             break;
 
                         case StarMapImmediateLoadAttribute:
-                            patchManager.RegisterInstanceVoidPatch<Mod>(IPatchHelper.PatchType.Prefix, this, typeof(KSA.Mod).GetMethod(nameof(Mod.PrepareSystems))!,
+                            patchManager.RegisterInstanceVoidPatch<Mod>(IPatchService.PatchType.Prefix, this, typeof(KSA.Mod).GetMethod(nameof(Mod.PrepareSystems))!,
                                 (args, mod) =>
                                 {
                                     if (mod.Id.Equals(ModId))
@@ -179,7 +179,7 @@ namespace StarMap.Core.ModRepository
                                 });
                             break;
                         case StarMapAfterOnFrameAttribute:
-                            patchManager.RegisterInstanceVoidPatch<Program>(IPatchHelper.PatchType.Postfix, this, typeof(Program).GetMethod("OnFrame")!,
+                            patchManager.RegisterInstanceVoidPatch<Program>(IPatchService.PatchType.Postfix, this, typeof(Program).GetMethod("OnFrame")!,
                                 (args, mod) =>
                                 {
                                     classMethod.Invoke(modObject, [args[0], args[1]]);
@@ -188,7 +188,7 @@ namespace StarMap.Core.ModRepository
                                 });
                             break;
                         case StarMapBeforeGuiAttribute:
-                            patchManager.RegisterInstanceVoidPatch<Program>(IPatchHelper.PatchType.Prefix, this, typeof(Program).GetMethod("OnDrawUiFrame", BindingFlags.NonPublic | BindingFlags.Instance)!,
+                            patchManager.RegisterInstanceVoidPatch<Program>(IPatchService.PatchType.Prefix, this, typeof(Program).GetMethod("OnDrawUiFrame", BindingFlags.NonPublic | BindingFlags.Instance)!,
                                 (args, mod) =>
                                 {
                                     classMethod.Invoke(modObject, [args[0]]);
@@ -197,7 +197,7 @@ namespace StarMap.Core.ModRepository
                                 });
                             break;
                         case StarMapAfterGuiAttribute:
-                            patchManager.RegisterInstanceVoidPatch<Program>(IPatchHelper.PatchType.Postfix, this, typeof(Program).GetMethod("OnDrawUiViewports", BindingFlags.NonPublic | BindingFlags.Instance)!,
+                            patchManager.RegisterInstanceVoidPatch<Program>(IPatchService.PatchType.Postfix, this, typeof(Program).GetMethod("OnDrawUiViewports", BindingFlags.NonPublic | BindingFlags.Instance)!,
                                 (args, mod) =>
                                 {
                                     classMethod.Invoke(modObject, [args[0]]);
