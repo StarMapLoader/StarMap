@@ -57,6 +57,9 @@ namespace StarMap.Core.UI.ConfirmRestart
                     ImGui.UpdatePlatformWindows();
                     ImGui.RenderPlatformWindowsDefault();
                 }
+                var clearValues = Program.MainPass.ClearValues;
+                if (clearValues is null)
+                    return;
                 (FrameResult result, AcquiredFrame acquiredFrame1) = _renderer.TryAcquireNextFrame();
                 AcquiredFrame acquiredFrame2 = acquiredFrame1;
                 if (result != 0)
@@ -73,7 +76,7 @@ namespace StarMap.Core.UI.ConfirmRestart
                         RenderPass = Program.MainPass.Pass,
                         Framebuffer = resources.Framebuffer,
                         RenderArea = new VkRect2D(this._renderer.Extent),
-                        ClearValues = (VkClearValue*)Program.MainPass.ClearValues.Ptr,
+                        ClearValues = (VkClearValue*)clearValues.Ptr,
                         ClearValueCount = 2
                     };
                     commandBuffer.Reset();

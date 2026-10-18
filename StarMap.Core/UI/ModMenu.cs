@@ -65,13 +65,10 @@ namespace StarMap.Core.UI
 
         public IDisposable AddModMenuButton(string label, Action action)
         {
-            if (_buttons.ContainsKey(label))
+            var newButton = new ModMenuButton(this, label, action);
+
+            if (!_buttons.TryAdd(label, newButton))
                 throw new Exception($"Modmenu button with label {label} already exists");
-
-            var newButton =  new ModMenuButton(this, label, action);
-            _buttons.TryAdd(label, newButton);
-
-            
 
             return newButton;
         }
