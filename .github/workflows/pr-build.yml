@@ -17,7 +17,7 @@ jobs:
         if: github.event.pull_request.head.repo.full_name == github.repository
         runs-on: ubuntu-latest
         env:
-            DOTNET_VERSION: 9.0
+            DOTNET_VERSION: 10.0
             PROJECT: StarMap/StarMap.csproj
             NUGET_SOURCE: "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
 
@@ -32,7 +32,7 @@ jobs:
 
             - name: Restore dependencies
               run: |
-                  dotnet nuget add source --username "${{ secrets.ORG_PACKAGE_USERNAME }}" --password "${{ secrets.ORG_PACKAGE_TOKEN }}" --store-password-in-clear-text --name github "${{ env.NUGET_SOURCE }}"
+                  dotnet nuget add source --username "${{ secrets.ORG_PACKAGE_USERNAME }}" --password "${{ secrets.ORG_PACKAGE_TOKEN }}" --store-password-in-clear-text --name StarMapGitHubNugetSource "${{ env.NUGET_SOURCE }}"
                   dotnet restore ${{ env.PROJECT }}
 
             - name: Build

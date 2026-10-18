@@ -81,7 +81,7 @@ jobs:
                     --username ${{ secrets.ORG_PACKAGE_USERNAME }} \
                     --password ${{ secrets.ORG_PACKAGE_TOKEN }} \
                     --store-password-in-clear-text \
-                    --name github "${{ env.NUGET_SOURCE }}"
+                    --name StarMapGitHubNugetSource "${{ env.NUGET_SOURCE }}"
 
             - name: Build standalone
               run: |
@@ -159,7 +159,7 @@ jobs:
                     --username ${{ secrets.ORG_PACKAGE_USERNAME }} \
                     --password ${{ secrets.ORG_PACKAGE_TOKEN }} \
                     --store-password-in-clear-text \
-                    --name github "${{ env.NUGET_SOURCE }}"
+                    --name StarMapGitHubNugetSource "${{ env.NUGET_SOURCE }}"
 
             - name: Pack and push StarMap.API (if changed)
               run: |

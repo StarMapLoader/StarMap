@@ -70,7 +70,7 @@ jobs:
                     --username ${{ secrets.ORG_PACKAGE_USERNAME }} \
                     --password ${{ secrets.ORG_PACKAGE_TOKEN }} \
                     --store-password-in-clear-text \
-                    --name github "${{ env.NUGET_SOURCE }}"
+                    --name StarMapGitHubNugetSource "${{ env.NUGET_SOURCE }}"
 
             - name: Build
               run: |
@@ -120,7 +120,7 @@ jobs:
                     --username ${{ secrets.ORG_PACKAGE_USERNAME }} \
                     --password ${{ secrets.ORG_PACKAGE_TOKEN }} \
                     --store-password-in-clear-text \
-                    --name github "${{ env.NUGET_SOURCE }}"
+                    --name StarMapGitHubNugetSource "${{ env.NUGET_SOURCE }}"
 
             - name: Pack and push RC NuGet package
               run: |
@@ -132,7 +132,7 @@ jobs:
                     /p:Version=${{ needs.build.outputs.new_version }} \
                     /p:InformationalVersion=${{ needs.build.outputs.hash_version }}
                   dotnet nuget push ./nupkg/*.nupkg \
-                    --source github \
+                    --source StarMapGitHubNugetSource \
                     --api-key "${{ secrets.GITHUB_TOKEN }}" \
                     --skip-duplicate
 
