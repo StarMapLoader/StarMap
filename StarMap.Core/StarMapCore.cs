@@ -15,7 +15,6 @@ namespace StarMap.Core
 
         public StarMapCore(AssemblyLoadContext coreAssemblyLoadContext)
         {
-
             var serviceCollection = new ServiceCollection();
             serviceCollection.AddKeyedSingleton("Core", coreAssemblyLoadContext);
             serviceCollection.AddSingleton<IServiceProviderService, ServiceProviderService>();
@@ -32,15 +31,21 @@ namespace StarMap.Core
 
             _serviceProvider = serviceCollection.BuildServiceProvider();
 
+            try
+            {
+                _serviceProvider.GetRequiredService<ICoreService>().Init();
+            }
+            catch
+            {
+                ((IDisposable)_serviceProvider).Dispose();
+                throw;
+            }
 
-            _serviceProvider.GetRequiredService<ICoreService>().Init();
         }
 
         public void Dispose()
         {
-
-
-            _serviceProvider.GetRequiredService<IModsLoader>().Dispose();
+            ((IDisposable)_serviceProvider).Dispose();
         }
 
 
