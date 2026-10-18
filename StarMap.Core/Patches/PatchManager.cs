@@ -1,9 +1,7 @@
 ﻿using HarmonyLib;
-using StarMap.API.Interfaces;
+using StarMap.API.Services;
 using StarMap.Core.ModRepository;
-using System.Diagnostics;
 using System.Reflection;
-using System.Runtime.ExceptionServices;
 
 namespace StarMap.Core.Patches
 {
@@ -146,7 +144,7 @@ namespace StarMap.Core.Patches
 
         public void Dispose()
         {
-            foreach(var patch in _patches)
+            foreach (var patch in _patches)
             {
                 patch.Value.Dispose();
             }
@@ -261,7 +259,8 @@ namespace StarMap.Core.Patches
 
                 default:
                     throw new InvalidOperationException("Unknown type " + type);
-            };
+            }
+            ;
         }
 
         public void UnregisterPatch(IPatchService.PatchType type, RuntimeMod? mod)

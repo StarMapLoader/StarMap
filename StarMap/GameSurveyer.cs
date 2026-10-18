@@ -1,5 +1,4 @@
-﻿using StarMap.Types;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.Loader;
 
@@ -12,7 +11,7 @@ namespace StarMap
         private readonly string[] _args;
 
         private Assembly? _game;
-        private IStarMapCore? _core;
+        private IDisposable? _core;
 
 
         public GameSurveyer(AssemblyLoadContext alc, string location, string[] args)
@@ -26,11 +25,6 @@ namespace StarMap
         {
             var modManagerAssembly = _gameAssemblyContext.LoadFromAssemblyPath(Path.GetFullPath("./StarMap.Core.dll"));
 
-            var starMapCore = modManagerAssembly.GetTypes().FirstOrDefault((type) => typeof(IStarMapCore).IsAssignableFrom(type) && !type.IsInterface);
-            if (starMapCore is null) return false;
-            var createdCore = Activator.CreateInstance(starMapCore, [_gameAssemblyContext]);
-            if (createdCore is not IStarMapCore core) return false;
-
             _game = _gameAssemblyContext.LoadFromAssemblyPath(_gameLocation);
 
             var gameDirectory = Path.GetDirectoryName(_gameLocation);
@@ -43,8 +37,13 @@ namespace StarMap
             Directory.SetCurrentDirectory(gameDirectory);
             AppContext.SetData("APP_CONTEXT_BASE_DIRECTORY", gameDirectory + Path.DirectorySeparatorChar);
 
+            var starMapCore = modManagerAssembly.GetTypes().FirstOrDefault((type) => type.FullName == "StarMap.Core.StarMapCore" && !type.IsInterface);
+            if (starMapCore is null) return false;
+
+            var createdCore = Activator.CreateInstance(starMapCore, [_gameAssemblyContext]);
+            if (createdCore is not IDisposable core) return false;
+
             _core = core;
-            core.Init();
             return true;
         }
 
@@ -57,7 +56,7 @@ namespace StarMap
 
         public void Dispose()
         {
-            _core?.DeInit();
+            _core?.Dispose();
         }
     }
 }

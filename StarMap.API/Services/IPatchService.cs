@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using System.Text;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace StarMap.API.Interfaces
+namespace StarMap.API.Services
 {
 
     public interface IPatchService

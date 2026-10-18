@@ -18,7 +18,6 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\StarMap.API\StarMap.API.csproj" />
-		<ProjectReference Include="..\StarMap.Types\StarMap.Types.csproj" />
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(Configuration)' == 'Debug'">

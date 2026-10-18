@@ -1,7 +1,4 @@
-﻿using HarmonyLib;
-using KSA;
-
-namespace StarMap.Core.Patches
+﻿namespace StarMap.Core.Patches
 {
     internal static class DocumentsPathOverride
     {

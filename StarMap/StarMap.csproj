@@ -14,6 +14,5 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\StarMap.Core\StarMap.Core.csproj" />
-		<ProjectReference Include="..\StarMap.Types\StarMap.Types.csproj" />
 	</ItemGroup>
 </Project>

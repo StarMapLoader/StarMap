@@ -1,6 +1,6 @@
 ﻿using HarmonyLib;
 using KSA;
-using StarMap.API.Interfaces;
+using StarMap.API.Services;
 using StarMap.Core.UI.ConfirmRestart;
 using System.Diagnostics;
 

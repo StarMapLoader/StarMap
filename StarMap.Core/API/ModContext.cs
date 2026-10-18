@@ -1,7 +1,4 @@
 ﻿using StarMap.Core.ModRepository;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace StarMap.Core.API
 {
@@ -10,7 +7,7 @@ namespace StarMap.Core.API
         RuntimeMod Mod { get; set; }
     }
 
-    internal sealed class ModContext: IModContext
+    internal sealed class ModContext : IModContext
     {
         public RuntimeMod Mod { get; set; } = null!;
     }

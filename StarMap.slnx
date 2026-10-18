@@ -11,5 +11,4 @@
     <Project Path="StarMap/StarMap.csproj" />
     <Project Path="StarMap.API/StarMap.API.csproj" />
     <Project Path="StarMap.Core/StarMap.Core.csproj" />
-    <Project Path="StarMap.Types/StarMap.Types.csproj" />
 </Solution>

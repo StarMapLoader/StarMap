@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace StarMap.API.Interfaces
+﻿namespace StarMap.API.Services
 {
     public interface IModMenuService
     {

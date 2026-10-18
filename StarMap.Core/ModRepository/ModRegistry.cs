@@ -1,6 +1,4 @@
-﻿using KSA;
-using StarMap.API;
-using StarMap.Core.Config;
+﻿using StarMap.API;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 

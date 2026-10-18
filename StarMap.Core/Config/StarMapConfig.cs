@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace StarMap.Core.Config
+﻿namespace StarMap.Core.Config
 {
-    internal class RootConfig 
-    { 
+    internal class RootConfig
+    {
         public required StarMapConfig StarMap { get; set; }
     }
-
 
     internal class StarMapConfig
     {

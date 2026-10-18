@@ -1,5 +1,4 @@
-﻿using Brutal.ImGuiApi;
-using Brutal.Numerics;
+﻿using Brutal.Numerics;
 using KSA;
 
 namespace StarMap.Core.UI.ConfirmRestart
@@ -29,7 +28,7 @@ namespace StarMap.Core.UI.ConfirmRestart
         ];
 
         private ConfirmRestartPopup(ConfirmRestart ui)
-        { 
+        {
             _title = "Game requires restart";
             UI = ui;
         }

@@ -1,16 +1,13 @@
 ﻿using KSA;
 using Microsoft.Extensions.DependencyInjection;
 using StarMap.API;
-using StarMap.API.Interfaces;
+using StarMap.API.Services;
 using StarMap.Core.Config;
 using StarMap.Core.Patches;
-using System;
-using System.Collections.Generic;
+using StarMap.Core.Services;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Reflection;
 using System.Runtime.Loader;
-using System.Text;
 using Tomlet;
 
 namespace StarMap.Core.ModRepository
@@ -101,7 +98,7 @@ namespace StarMap.Core.ModRepository
 
             if (NotLoadedModDependencies.Count > 0)
             {
-                
+
                 modRegistry.WaitingMods.Add(this);
                 return false;
             }
@@ -129,14 +126,14 @@ namespace StarMap.Core.ModRepository
             return dependency.ExportedAssemblies.Intersect(dependencyInfo.ImportedAssemblies);
         }
 
-        public bool InitializeMod(ModRegistry modRegistry, ICoreService core, IPatchManager patchManager)
+        public bool InitializeMod(ModRegistry modRegistry, IPatchManager patchManager, IServiceProviderService serviceProviderService)
         {
             var modClass = ModAssembly.GetTypes().FirstOrDefault(type => type.GetCustomAttributes().Any(attr => attr.GetType().Name == typeof(StarMapModAttribute).Name));
             if (modClass is null) return false;
 
             ModType = modClass;
 
-            var services = core.CreateModDependencies(this);
+            var services = serviceProviderService.CreateModDependencies(this);
             var modObject = ActivatorUtilities.CreateInstance(services, ModType);
             if (modObject is null) return false;
             ModInstance = modObject;
@@ -160,12 +157,12 @@ namespace StarMap.Core.ModRepository
                             modRegistry.AddModMethod(ModId, attr, modObject, classMethod);
                             break;
                         case StarMapAllModsLoadedAttribute:
-                            patchManager.RegisterStaticVoidPatch(IPatchService.PatchType.Postfix, this, typeof(KSA.ModLibrary).GetMethod(nameof(ModLibrary.LoadAll))!, 
+                            patchManager.RegisterStaticVoidPatch(IPatchService.PatchType.Postfix, this, typeof(KSA.ModLibrary).GetMethod(nameof(ModLibrary.LoadAll))!,
                                 args =>
                                 {
-                                classMethod.Invoke(modObject, args);
-                                return true;
-                            });
+                                    classMethod.Invoke(modObject, args);
+                                    return true;
+                                });
                             break;
 
                         case StarMapImmediateLoadAttribute:

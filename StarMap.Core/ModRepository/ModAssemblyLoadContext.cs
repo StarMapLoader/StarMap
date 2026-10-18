@@ -1,5 +1,4 @@
-﻿using KSA;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Runtime.Loader;
 
 namespace StarMap.Core.ModRepository

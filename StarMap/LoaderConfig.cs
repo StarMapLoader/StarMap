@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace StarMap.Types
+namespace StarMap
 {
     public class LoaderConfig
     {
@@ -42,7 +42,7 @@ namespace StarMap.Types
             GameLocation = path;
 
             GameArguments = config.GameArguments;
-            
+
             return true;
         }
 
