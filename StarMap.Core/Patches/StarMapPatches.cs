@@ -22,10 +22,10 @@ namespace StarMap.Core.Patches
 
         public void Init()
         {
-            _patchManager.RegisterStaticVoidPatch(IPatchHelper.PatchType.Prefix, null, typeof(ModLibrary).GetMethod(nameof(ModLibrary.PrepareAll))!, BeforePrepareAll);
+            _patchManager.RegisterStaticVoidPatch(IPatchService.PatchType.Prefix, null, typeof(ModLibrary).GetMethod(nameof(ModLibrary.PrepareAll))!, BeforePrepareAll);
 
             if (DocumentsPathOverride.ShouldApplyOverride())
-                _patchManager.RegisterStaticPatch<string>(IPatchHelper.PatchType.Prefix, null, AccessTools.PropertyGetter(typeof(Constants), nameof(Constants.DocumentsFolderPath)), DocumentsPathOverride.BeforeDocumentsFolderPath);
+                _patchManager.RegisterStaticPatch<string>(IPatchService.PatchType.Prefix, null, AccessTools.PropertyGetter(typeof(Constants), nameof(Constants.DocumentsFolderPath)), DocumentsPathOverride.BeforeDocumentsFolderPath);
         }
 
         private bool BeforePrepareAll(object[] _)

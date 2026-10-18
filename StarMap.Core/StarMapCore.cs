@@ -3,6 +3,7 @@ using StarMap.API.Interfaces;
 using StarMap.Core.API;
 using StarMap.Core.ModRepository;
 using StarMap.Core.Patches;
+using StarMap.Core.UI;
 using StarMap.Types;
 using System.Runtime.Loader;
 
@@ -33,9 +34,11 @@ namespace StarMap.Core
             serviceCollection.AddSingleton<IPatchManager, PatchManager>();
             serviceCollection.AddSingleton<IModsLoader, ModsLoader>();
             serviceCollection.AddSingleton<IStarMapPatches, StarMapPatches>();
+            serviceCollection.AddSingleton<IModMenu, ModMenu>();
 
             serviceCollection.AddScoped<IModContext, ModContext>();
             serviceCollection.AddScoped<IPatchHelper, PatchHelper>();
+            serviceCollection.AddScoped<IModMenuService, ModMenuRegistry>();
 
             _serviceProvider = serviceCollection.BuildServiceProvider();
         }

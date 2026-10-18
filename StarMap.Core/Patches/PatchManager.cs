@@ -9,10 +9,10 @@ namespace StarMap.Core.Patches
 {
     internal interface IPatchManager : IDisposable
     {
-        void RegisterInstancePatch<T, U>(IPatchHelper.PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchHelper.InstanceCallback<T, U> callback);
-        void RegisterInstanceVoidPatch<T>(IPatchHelper.PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchHelper.InstanceVoidCallback<T> callback);
-        void RegisterStaticPatch<U>(IPatchHelper.PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchHelper.StaticCallback<U> callback);
-        void RegisterStaticVoidPatch(IPatchHelper.PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchHelper.StaticVoidCallback callback);
+        void RegisterInstancePatch<T, U>(IPatchService.PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.InstanceCallback<T, U> callback);
+        void RegisterInstanceVoidPatch<T>(IPatchService.PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.InstanceVoidCallback<T> callback);
+        void RegisterStaticPatch<U>(IPatchService.PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.StaticCallback<U> callback);
+        void RegisterStaticVoidPatch(IPatchService.PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.StaticVoidCallback callback);
     }
 
     internal class PatchManager : IPatchManager
@@ -33,21 +33,21 @@ namespace StarMap.Core.Patches
             _instance = this;
         }
 
-        public void RegisterInstancePatch<T, U>(IPatchHelper.PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchHelper.InstanceCallback<T, U> callback)
+        public void RegisterInstancePatch<T, U>(IPatchService.PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.InstanceCallback<T, U> callback)
         {
             GetOrCreateMethodPatch(method).RegisterPatch(patchType, mod, new InstanceCallback<T, U>(callback));
         }
-        public void RegisterInstanceVoidPatch<T>(IPatchHelper.PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchHelper.InstanceVoidCallback<T> callback)
+        public void RegisterInstanceVoidPatch<T>(IPatchService.PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.InstanceVoidCallback<T> callback)
         {
             GetOrCreateMethodPatch(method).RegisterPatch(patchType, mod, new InstanceVoidCallback<T>(callback));
         }
 
-        public void RegisterStaticPatch<U>(IPatchHelper.PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchHelper.StaticCallback<U> callback)
+        public void RegisterStaticPatch<U>(IPatchService.PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.StaticCallback<U> callback)
         {
             GetOrCreateMethodPatch(method).RegisterPatch(patchType, mod, new StaticCallback<U>(callback));
         }
 
-        public void RegisterStaticVoidPatch(IPatchHelper.PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchHelper.StaticVoidCallback callback)
+        public void RegisterStaticVoidPatch(IPatchService.PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.StaticVoidCallback callback)
         {
             GetOrCreateMethodPatch(method).RegisterPatch(patchType, mod, new StaticVoidCallback(callback));
         }
@@ -176,7 +176,7 @@ namespace StarMap.Core.Patches
         Type ResultType { get; }
     }
 
-    internal class InstanceCallback<T, U>(IPatchHelper.InstanceCallback<T, U> callback) : IResultCallback
+    internal class InstanceCallback<T, U>(IPatchService.InstanceCallback<T, U> callback) : IResultCallback
     {
         public Type ResultType => typeof(U);
 
@@ -191,7 +191,7 @@ namespace StarMap.Core.Patches
         }
     }
 
-    internal class InstanceVoidCallback<T>(IPatchHelper.InstanceVoidCallback<T> callback) : IVoidCallback
+    internal class InstanceVoidCallback<T>(IPatchService.InstanceVoidCallback<T> callback) : IVoidCallback
     {
         public bool Invoke(object[] args, object? instance, ref object? result)
         {
@@ -201,7 +201,7 @@ namespace StarMap.Core.Patches
         }
     }
 
-    internal class StaticCallback<U>(IPatchHelper.StaticCallback<U> callback) : IResultCallback
+    internal class StaticCallback<U>(IPatchService.StaticCallback<U> callback) : IResultCallback
     {
         public Type ResultType => typeof(U);
 
@@ -215,7 +215,7 @@ namespace StarMap.Core.Patches
         }
     }
 
-    internal class StaticVoidCallback(IPatchHelper.StaticVoidCallback callback) : IVoidCallback
+    internal class StaticVoidCallback(IPatchService.StaticVoidCallback callback) : IVoidCallback
     {
         public bool Invoke(object[] args, object? instance, ref object? result)
         {
@@ -240,7 +240,7 @@ namespace StarMap.Core.Patches
             _method = method;
         }
 
-        public void RegisterPatch(IPatchHelper.PatchType type, RuntimeMod? mod, IPatchCallback patchCallback)
+        public void RegisterPatch(IPatchService.PatchType type, RuntimeMod? mod, IPatchCallback patchCallback)
         {
             if (patchCallback is IResultCallback resultCallback && GetReturnType() != resultCallback.ResultType)
             {
@@ -251,11 +251,11 @@ namespace StarMap.Core.Patches
 
             switch (type)
             {
-                case IPatchHelper.PatchType.Prefix:
+                case IPatchService.PatchType.Prefix:
                     AddPrefix(mod, patchCallback);
                     break;
 
-                case IPatchHelper.PatchType.Postfix:
+                case IPatchService.PatchType.Postfix:
                     AddPostfix(mod, patchCallback);
                     break;
 
@@ -264,15 +264,15 @@ namespace StarMap.Core.Patches
             };
         }
 
-        public void UnregisterPatch(IPatchHelper.PatchType type, RuntimeMod? mod)
+        public void UnregisterPatch(IPatchService.PatchType type, RuntimeMod? mod)
         {
             switch (type)
             {
-                case IPatchHelper.PatchType.Prefix:
+                case IPatchService.PatchType.Prefix:
                     RemovePrefix(mod);
                     break;
 
-                case IPatchHelper.PatchType.Postfix:
+                case IPatchService.PatchType.Postfix:
                     RemovePostfix(mod);
                     break;
 

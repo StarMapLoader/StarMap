@@ -8,7 +8,7 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 namespace StarMap.API.Interfaces
 {
 
-    public interface IPatchHelper
+    public interface IPatchService
     {
         enum PatchType
         {
