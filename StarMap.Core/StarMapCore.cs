@@ -22,10 +22,12 @@ namespace StarMap.Core
             serviceCollection.AddSingleton<IModsLoader, ModsLoader>();
             serviceCollection.AddSingleton<IStarMapPatches, StarMapPatches>();
             serviceCollection.AddSingleton<IModMenu, ModMenu>();
+            serviceCollection.AddSingleton<IMediator, Mediator>();
 
             serviceCollection.AddScoped<IModContext, ModContext>();
             serviceCollection.AddScoped<IPatchService, PatchService>();
             serviceCollection.AddScoped<IModMenuService, ModMenuService>();
+            serviceCollection.AddScoped<IMediationService, MediationService>();
 
             serviceCollection.AddSingleton<ICoreService, CoreService>();
 
