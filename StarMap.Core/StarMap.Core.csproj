@@ -37,4 +37,40 @@
 		</PackageReference>
 	</ItemGroup>
 
+	<ItemGroup>
+		<PackageReference Include="Ahwoo.BRUTAL.Collections">
+			<ExcludeAssets>runtime;native</ExcludeAssets>
+		</PackageReference>
+		<PackageReference Include="Ahwoo.BRUTAL.Core">
+			<ExcludeAssets>runtime;native</ExcludeAssets>
+		</PackageReference>
+		<PackageReference Include="Ahwoo.BRUTAL.Glfw">
+			<ExcludeAssets>runtime;native</ExcludeAssets>
+		</PackageReference>
+		<PackageReference Include="Ahwoo.BRUTAL.ImGui">
+			<ExcludeAssets>runtime;native</ExcludeAssets>
+		</PackageReference>
+		<PackageReference Include="Ahwoo.BRUTAL.Localization">
+			<ExcludeAssets>runtime;native</ExcludeAssets>
+		</PackageReference>
+		<PackageReference Include="Ahwoo.BRUTAL.Logging">
+			<ExcludeAssets>runtime;native</ExcludeAssets>
+		</PackageReference>
+		<PackageReference Include="Ahwoo.BRUTAL.Memory">
+			<ExcludeAssets>runtime;native</ExcludeAssets>
+		</PackageReference>
+		<PackageReference Include="Ahwoo.BRUTAL.Numerics">
+			<ExcludeAssets>runtime;native</ExcludeAssets>
+		</PackageReference>
+		<PackageReference Include="Ahwoo.BRUTAL.Strings">
+			<ExcludeAssets>runtime;native</ExcludeAssets>
+		</PackageReference>
+		<PackageReference Include="Ahwoo.BRUTAL.Vulkan">
+			<ExcludeAssets>runtime;native</ExcludeAssets>
+		</PackageReference>
+		<PackageReference Include="Ahwoo.BRUTAL.Vulkan.Abstractions">
+			<ExcludeAssets>runtime;native</ExcludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
 </Project>
