@@ -1,0 +1,22 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="Ahwoo.BRUTAL.Collections" Version="2026.10.1" />
+    <PackageVersion Include="Ahwoo.BRUTAL.Core" Version="2026.10.1" />
+    <PackageVersion Include="Ahwoo.BRUTAL.Glfw" Version="2026.10.4" />
+    <PackageVersion Include="Ahwoo.BRUTAL.ImGui" Version="2026.10.2" />
+    <PackageVersion Include="Ahwoo.BRUTAL.Localization" Version="2026.10.2" />
+    <PackageVersion Include="Ahwoo.BRUTAL.Logging" Version="2026.10.2" />
+    <PackageVersion Include="Ahwoo.BRUTAL.Memory" Version="2026.10.1" />
+    <PackageVersion Include="Ahwoo.BRUTAL.Numerics" Version="2026.10.1" />
+    <PackageVersion Include="Ahwoo.BRUTAL.Strings" Version="2026.10.1" />
+    <PackageVersion Include="Ahwoo.BRUTAL.Vulkan" Version="2026.10.2" />
+    <PackageVersion Include="Ahwoo.BRUTAL.Vulkan.Abstractions" Version="2026.10.2" />
+    <PackageVersion Include="Lib.Harmony" Version="2.4.2" />
+    <PackageVersion Include="Samboy063.Tomlet" Version="6.1.0" />
+    <PackageVersion Include="RocketWerkz.KSA" Version="2026.10.19.5638" />
+    <PackageVersion Include="RocketWerkz.KSA.Ref" Version="2026.10.19.5638" />
+  </ItemGroup>
+</Project>
