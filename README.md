@@ -12,7 +12,7 @@ The [StarMap documentation](https://starmaploader.github.io/StarMap/) covers ins
 
 To publish a release, create and push a semantic-version tag such as `1.2.3` on the commit to release. The release workflow builds the release and installer from that commit; tags can point to commits on any branch.
 
-The documentation site keeps a version for each major/minor release and updates the `latest` version alias.
+The documentation site tracks the current release; older releases do not have separate documentation snapshots. The current release-candidate documentation is available at [the RC docs site](https://starmaploader.github.io/StarMap/rc/).
 
 ## Installation
 

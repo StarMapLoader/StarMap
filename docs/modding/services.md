@@ -1,8 +1,9 @@
 # Services and mechanics
 
-StarMap provides three services to mod entry classes through constructor injection. Each has its own guide:
+StarMap provides core services and a registry for services shared between mods. Entry classes receive these APIs through constructor injection. Each has its own guide:
 
 - [Constructor injection](constructor-injection.md)
+- [Mod-provided services](mod-services.md) with `IModServiceRegistry`
 - [In-game menu items](mod-menu.md) with `IModMenuService`
 - [Typed event mediation](event-mediation.md) with `IMediationService`
 - [Method patching](patching.md) with `IPatchService`

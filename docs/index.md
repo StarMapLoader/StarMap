@@ -11,4 +11,4 @@ StarMap is an actively developed prototype. Check that a mod targets a compatibl
 - [Create your first mod](modding/first-mod.md)
 - [Browse the modding overview and API](modding/index.md)
 
-The version selector in the header lets you view documentation for a particular major/minor release. `latest` points to the most recently published documentation version.
+This site documents the current StarMap release or release-candidate build. Older release snapshots are not currently published.

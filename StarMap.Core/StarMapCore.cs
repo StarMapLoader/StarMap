@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using StarMap.API.Registries;
 using StarMap.API.Services;
 using StarMap.Core.API;
 using StarMap.Core.ModRepository;
@@ -23,11 +24,13 @@ namespace StarMap.Core
             serviceCollection.AddSingleton<IStarMapPatches, StarMapPatches>();
             serviceCollection.AddSingleton<IModMenu, ModMenu>();
             serviceCollection.AddSingleton<IMediator, Mediator>();
+            serviceCollection.AddSingleton<IModServices, ModServices>();
 
             serviceCollection.AddScoped<IModContext, ModContext>();
             serviceCollection.AddScoped<IPatchService, PatchService>();
             serviceCollection.AddScoped<IModMenuService, ModMenuService>();
             serviceCollection.AddScoped<IMediationService, MediationService>();
+            serviceCollection.AddScoped<IModServiceRegistry, ModServiceRegistry>();
 
             serviceCollection.AddSingleton<ICoreService, CoreService>();
 

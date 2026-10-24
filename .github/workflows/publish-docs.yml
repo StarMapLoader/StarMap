@@ -1,0 +1,133 @@
+name: Publish documentation
+
+on:
+    workflow_call:
+        inputs:
+            rc_ref:
+                description: Git ref containing the release-candidate documentation
+                required: true
+                type: string
+
+permissions:
+    contents: read
+    pages: write
+    id-token: write
+
+concurrency:
+    group: starmap-github-pages
+    cancel-in-progress: false
+
+jobs:
+    publish:
+        runs-on: ubuntu-latest
+        environment:
+            name: github-pages
+            url: ${{ steps.deployment.outputs.page_url }}
+        steps:
+            - uses: actions/configure-pages@v6
+
+            - uses: actions/checkout@v7
+              with:
+                  ref: ${{ inputs.rc_ref }}
+                  path: rc-source
+                  fetch-depth: 0
+                  fetch-tags: true
+
+            - name: Find latest release tag
+              id: stable
+              working-directory: rc-source
+              run: |
+                  stable_tag=$(git tag --list | awk '/^[0-9]+\.[0-9]+\.[0-9]+$/ { print }' | sort -V | tail -n 1)
+                  echo "stable_tag=$stable_tag" >> "$GITHUB_OUTPUT"
+
+            - uses: actions/checkout@v7
+              if: steps.stable.outputs.stable_tag != ''
+              with:
+                  ref: ${{ steps.stable.outputs.stable_tag }}
+                  path: stable-source
+                  fetch-depth: 1
+
+            - uses: actions/setup-python@v6
+              with:
+                  python-version: "3.12"
+
+            - name: Install documentation dependencies
+              run: python -m pip install --requirement rc-source/requirements-docs.txt
+
+            - name: Build latest release documentation
+              if: steps.stable.outputs.stable_tag != ''
+              working-directory: stable-source
+              run: zensical build --clean --strict
+
+            - name: Build initial stable documentation
+              if: steps.stable.outputs.stable_tag == ''
+              working-directory: rc-source
+              run: zensical build --clean --strict
+
+            - name: Assemble stable documentation
+              env:
+                  STABLE_TAG: ${{ steps.stable.outputs.stable_tag }}
+              run: |
+                  mkdir -p "$GITHUB_WORKSPACE/site"
+                  if [[ -n "$STABLE_TAG" ]]; then
+                    cp -a stable-source/site/. "$GITHUB_WORKSPACE/site/"
+                  else
+                    cp -a rc-source/site/. "$GITHUB_WORKSPACE/site/"
+                  fi
+
+            - name: Create release-candidate configuration
+              working-directory: rc-source
+              run: |
+                  python - <<'PY'
+                  import re
+                  from pathlib import Path
+
+                  config_path = Path("mkdocs.yml")
+                  config = config_path.read_text(encoding="utf-8")
+                  site_url = re.search(r"(?m)^site_url:\s*(\S+)\s*$", config)
+                  if site_url is None:
+                      raise SystemExit("mkdocs.yml must define site_url")
+
+                  rc_url = site_url.group(1).rstrip("/") + "/rc/"
+                  config = (
+                      config[:site_url.start()]
+                      + f"site_url: {rc_url}"
+                      + config[site_url.end():]
+                  )
+                  site_name = re.search(r"(?m)^site_name:.*$", config)
+                  if site_name is None:
+                      raise SystemExit("mkdocs.yml must define site_name")
+                  config = (
+                      config[:site_name.start()]
+                      + "site_name: StarMap RC"
+                      + config[site_name.end():]
+                  )
+                  site_dir = re.search(r"(?m)^site_dir:.*$", config)
+                  if site_dir is None:
+                      config = "site_dir: rc-site\n" + config
+                  else:
+                      config = (
+                          config[:site_dir.start()]
+                          + "site_dir: rc-site"
+                          + config[site_dir.end():]
+                      )
+                  Path("mkdocs-rc.yml").write_text(config, encoding="utf-8")
+                  PY
+
+            - name: Build release-candidate documentation
+              working-directory: rc-source
+              run: zensical build --config-file mkdocs-rc.yml --clean --strict
+
+            - name: Add release-candidate documentation
+              run: |
+                  mkdir -p "$GITHUB_WORKSPACE/site/rc"
+                  cp -a rc-source/rc-site/. "$GITHUB_WORKSPACE/site/rc/"
+
+            - name: Upload documentation artifact
+              uses: actions/upload-pages-artifact@v5
+              with:
+                  path: site
+
+            - name: Deploy to GitHub Pages
+              id: deployment
+              uses: actions/deploy-pages@v5

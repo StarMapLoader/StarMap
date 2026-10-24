@@ -172,3 +172,13 @@ jobs:
                       ./build_artifacts/version.txt
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    publish-RC-docs:
+        needs: build
+        permissions:
+            contents: read
+            pages: write
+            id-token: write
+        uses: ./.github/workflows/publish-docs.yml
+        with:
+            rc_ref: ${{ github.sha }}

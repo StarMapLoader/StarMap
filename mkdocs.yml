@@ -13,9 +13,6 @@ theme:
 
 plugins:
   - search
-  - mike:
-      canonical_version: latest
-      version_selector: true
 
 markdown_extensions:
   - admonition
@@ -23,10 +20,6 @@ markdown_extensions:
   - tables
   - pymdownx.highlight
   - pymdownx.superfences
-
-extra:
-  version:
-    provider: mike
 
 nav:
   - Home: index.md
@@ -39,6 +32,7 @@ nav:
       - Services and mechanics:
           - Overview: modding/services.md
           - Constructor injection: modding/constructor-injection.md
+          - Mod-provided services: modding/mod-services.md
           - In-game menu items: modding/mod-menu.md
           - Typed event mediation: modding/event-mediation.md
           - Method patching: modding/patching.md

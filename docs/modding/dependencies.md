@@ -45,3 +45,7 @@ StarMap loads each mod in a separate assembly load context. Declare inter-mod re
 When using [`IMediationService`](event-mediation.md), the event type must be defined in an assembly loaded by the publishing mod and shared with each subscribing mod. Add that assembly to the provider's `ExportedAssemblies` and to the consumer's `ImportedAssemblies`; make the provider a required dependency if the consumer subscribes during startup.
 
 The consumer also needs a compile-time reference to the provider's event contract assembly. See [typed event mediation](event-mediation.md) for publisher and subscriber examples.
+
+## Sharing mod service contracts
+
+When a mod provides a service through `IModServiceRegistry`, the service contract must be defined in an assembly loaded by the provider and shared with each consumer. Add the contract assembly to the provider's `ExportedAssemblies` and the consumer's `ImportedAssemblies`, and declare the provider as a required dependency when the consumer needs the service during initialization. The consumer also needs a compile-time reference to the contract assembly. See [mod-provided services](mod-services.md) for examples.
