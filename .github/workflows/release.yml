@@ -205,7 +205,7 @@ jobs:
             id-token: write
         uses: ./.github/workflows/publish-docs.yml
         with:
-            rc_ref: main
+            rc_ref: ${{ github.sha }}
 
     build-release-installer:
         runs-on: windows-latest

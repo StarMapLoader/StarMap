@@ -4,7 +4,7 @@ on:
     workflow_call:
         inputs:
             rc_ref:
-                description: Git ref containing the release-candidate documentation
+                description: Git ref containing the documentation to publish under /rc
                 required: true
                 type: string
 
@@ -33,11 +33,26 @@ jobs:
                   fetch-depth: 0
                   fetch-tags: true
 
-            - name: Find latest release tag
+            - name: Find latest release tag with documentation
               id: stable
               working-directory: rc-source
               run: |
-                  stable_tag=$(git tag --list | awk '/^[0-9]+\.[0-9]+\.[0-9]+$/ { print }' | sort -V | tail -n 1)
+                  stable_tag=$(
+                    git tag --list |
+                      awk '/^[0-9]+\.[0-9]+\.[0-9]+$/ { print }' |
+                      sort -Vr |
+                      while IFS= read -r tag; do
+                        if git cat-file -e "${tag}:mkdocs.yml" 2>/dev/null; then
+                          printf '%s\n' "$tag"
+                          break
+                        fi
+                      done
+                  )
+                  if [[ -n "$stable_tag" ]]; then
+                    echo "Using stable documentation from $stable_tag"
+                  else
+                    echo "No stable release tag contains mkdocs.yml; using the RC source for initial stable documentation"
+                  fi
                   echo "stable_tag=$stable_tag" >> "$GITHUB_OUTPUT"
 
             - uses: actions/checkout@v7

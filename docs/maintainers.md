@@ -21,7 +21,7 @@ Zensical reads the existing MkDocs-compatible `mkdocs.yml`, so the project does 
 
 ## Publishing
 
-The Pages artifact contains the latest tagged release at the site root and documentation from `main` under `/rc/`. Release tags update the stable site; pushes to `main` update the RC site. Both trees are rebuilt for each deployment because GitHub Pages deploys the complete artifact rather than merging individual paths.
+The Pages artifact contains documentation from the latest stable tag that includes `mkdocs.yml` at the site root and documentation from the triggering commit under `/rc/`. RC builds use the `main` commit that triggered the build; release builds use the tagged release commit. Until a stable release includes the documentation, the root site is built from the triggering commit as an initial stable snapshot. Both trees are rebuilt for each deployment because GitHub Pages deploys the complete artifact rather than merging individual paths.
 
 The release workflow publishes after the release ZIP has been created, and the RC workflow publishes after a push to `main`. Both use GitHub Pages artifacts; the source Markdown remains in `docs/`.
 
