@@ -68,6 +68,7 @@ namespace StarMap.Core.ModRepository
                 ModAssemblyLoadContext = modLoadContext,
                 ModAssembly = modAssembly,
                 Config = starMapConfig,
+                ExportedAssemblies = [.. starMapConfig.ExportedAssemblies],
             };
 
             modLoadContext.RuntimeMod = runtimeMod;

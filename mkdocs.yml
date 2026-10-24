@@ -1,0 +1,46 @@
+site_name: StarMap
+site_description: Installation, usage, and mod development documentation for StarMap.
+site_url: https://starmaploader.github.io/StarMap/
+repo_url: https://github.com/StarMapLoader/StarMap
+repo_name: StarMapLoader/StarMap
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - content.code.copy
+
+plugins:
+  - search
+  - mike:
+      canonical_version: latest
+      version_selector: true
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - pymdownx.highlight
+  - pymdownx.superfences
+
+extra:
+  version:
+    provider: mike
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Using StarMap: using-starmap.md
+  - Modding:
+      - Overview: modding/index.md
+      - First mod: modding/first-mod.md
+      - Lifecycle callbacks: modding/lifecycle.md
+      - Services and mechanics:
+          - Overview: modding/services.md
+          - Constructor injection: modding/constructor-injection.md
+          - In-game menu items: modding/mod-menu.md
+          - Typed event mediation: modding/event-mediation.md
+          - Method patching: modding/patching.md
+      - Dependencies: modding/dependencies.md
+  - Maintainers: maintainers.md

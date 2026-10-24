@@ -4,9 +4,15 @@ A POC/Prototype arbitrary code modloader for Kitten Space Agency.
 Currently this loader can be ran with this functionality in the background, or as a dumb loader just loading mods.  
 It makes use of Assembly Load Contexts to ensure mod dependencies are managed seperatly, reducing conflicts
 
+## Documentation
+
+The [StarMap documentation](https://starmaploader.github.io/StarMap/) covers installation, usage, and mod development. Its Markdown source is in [`docs`](docs/).
+
 ## Releases
 
 To publish a release, create and push a semantic-version tag such as `1.2.3` on the commit to release. The release workflow builds the release and installer from that commit; tags can point to commits on any branch.
+
+The documentation site keeps a version for each major/minor release and updates the `latest` version alias.
 
 ## Installation
 
