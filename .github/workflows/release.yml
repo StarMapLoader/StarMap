@@ -1,9 +1,12 @@
-name: Release new version
+name: Release from version tag
 
 on:
-    pull_request:
-        types: [closed]
-        branches: [main]
+    push:
+        tags:
+            - '[0-9]*.[0-9]*.[0-9]*'
+
+permissions:
+    contents: write
 
 env:
     DOTNET_VERSION: 10.0
@@ -19,7 +22,7 @@ jobs:
         outputs:
             new_version: ${{ steps.version.outputs.new_version }}
             prev_version: ${{ steps.version.outputs.prev_version }}
-            hash_version: ${{ steps.version.outputs.hash_version }}
+            release_tag: ${{ steps.version.outputs.release_tag }}
             api_changed: ${{ steps.api_check.outputs.api_changed }}
         steps:
             - uses: actions/checkout@v4
@@ -31,49 +34,31 @@ jobs:
               with:
                   dotnet-version: ${{ env.DOTNET_VERSION }}
 
-            - name: Determine version bump
+            - name: Read version from release tag
               id: version
+              env:
+                  RELEASE_TAG: ${{ github.ref_name }}
               run: |
-                  # Be defensive and robust: use awk to split version numbers and always quote $GITHUB_OUTPUT
-                  git fetch --tags || true
-                  current=$(git describe --tags --abbrev=0 2>/dev/null || true)
-                  if [ -z "$current" ]; then
-                    echo "No tags found, defaulting to 0.0.0"
-                    current="0.0.0"
+                  if [[ ! "$RELEASE_TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                    echo "::error::Release tags must use semantic version format X.Y.Z (for example, 1.2.3)."
+                    exit 1
                   fi
 
-                  # Remove leading 'v' then extract parts using awk
-                  ver=${current#v}
-                  major=$(printf "%s" "$ver" | awk -F. '{print $1+0}')
-                  minor=$(printf "%s" "$ver" | awk -F. '{print $2+0}')
-                  patch=$(printf "%s" "$ver" | awk -F. '{print $3+0}')
-
-                  # Determine bump type from PR labels (safe interpolation)
-                  LABELS="${{ join(github.event.pull_request.labels.*.name, ' ') }}"
-                  if printf "%s" "$LABELS" | grep -q "major"; then
-                    major=$((major+1)); minor=0; patch=0; type="major"
-                  elif printf "%s" "$LABELS" | grep -q "minor"; then
-                    minor=$((minor+1)); patch=0; type="minor"
-                  else
-                    patch=$((patch+1)); type="patch"
+                  previous_tag=""
+                  if git rev-parse --verify "${GITHUB_SHA}^" >/dev/null 2>&1; then
+                    previous_tag=$(git tag --merged "${GITHUB_SHA}^" --format='%(refname:short)' \
+                      | awk '/^[0-9]+\.[0-9]+\.[0-9]+$/ { print }' \
+                      | sort -V \
+                      | tail -n 1)
                   fi
 
-                  new_version="${major}.${minor}.${patch}"
-
-                  echo "Next version: $new_version"
-                  echo "RC version: $hash_version"
-
-                  echo "prev_version=$current" >> $GITHUB_OUTPUT
-                  echo "new_version=$new_version" >> $GITHUB_OUTPUT
-
-            - name: Tag and push new version
-              run: |
-                  git config user.name "github-actions"
-                  git config user.email "actions@github.com"
-
-                  NEW_VERSION="${{ steps.version.outputs.new_version }}"
-                  git tag "$NEW_VERSION"
-                  git push origin "$NEW_VERSION"
+                  echo "Release version: $RELEASE_TAG"
+                  echo "Previous release tag: ${previous_tag:-none}"
+                  {
+                    echo "release_tag=$RELEASE_TAG"
+                    echo "new_version=$RELEASE_TAG"
+                    echo "prev_version=$previous_tag"
+                  } >> "$GITHUB_OUTPUT"
 
             - name: Setup NuGet source
               run: |
@@ -107,7 +92,7 @@ jobs:
             - name: Check whether StarMap.API changed since previous tag
               id: api_check
               run: |
-                  current="${{ steps.version.outputs.new_version }}"
+                  current_commit="${GITHUB_SHA}"
                   prev="${{  steps.version.outputs.prev_version }}"
 
                   echo "previous_tag=$prev" >> $GITHUB_OUTPUT
@@ -118,9 +103,9 @@ jobs:
                   fi
 
                   echo "Previous tag: $prev"
-                  echo "Current commit: $current"
+                  echo "Current commit: $current_commit"
 
-                  diff=$(git diff --name-only "$prev" "$current")
+                  diff=$(git diff --name-only "$prev" "$current_commit")
 
                   {
                       echo "diff_files<<EOF"
@@ -204,17 +189,17 @@ jobs:
             - name: Create GitHub Release
               uses: softprops/action-gh-release@v2
               with:
-                  tag_name: ${{ needs.build.outputs.new_version }}
+                  tag_name: ${{ needs.build.outputs.release_tag }}
                   name: Release ${{ needs.build.outputs.new_version }}
                   body: |
                       Automated release for version ${{ needs.build.outputs.new_version }}
-                      Triggered by PR #${{ github.event.pull_request.number }}
+                      Created from tag ${{ needs.build.outputs.release_tag }} at commit ${{ github.sha }}
                   files: |
                       StarMap-${{ needs.build.outputs.new_version }}.zip
 
     build-release-installer:
         runs-on: windows-latest
-        needs: build
+        needs: [build, release-zip]
         steps:
             - uses: actions/checkout@v4
 
@@ -223,7 +208,7 @@ jobs:
               uses: actions/download-artifact@v4
               with:
                   name: publish
-                  path: ./build_artifacts
+                  path: .
 
             # Install Inno Setup via Chocolatey
             - name: Install Inno Setup
@@ -238,5 +223,5 @@ jobs:
             - name: Attach installer to GitHub Release
               uses: softprops/action-gh-release@v2
               with:
-                  tag_name: ${{ needs.build.outputs.new_version }}
+                  tag_name: ${{ needs.build.outputs.release_tag }}
                   files: installer/dist/StarMap-${{ needs.build.outputs.new_version }}.exe

@@ -2,7 +2,7 @@ name: Release new RC release
 
 on:
     push:
-        branches: [dev]
+        branches: [main]
 
 env:
     DOTNET_VERSION: 10.0

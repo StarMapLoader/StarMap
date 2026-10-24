@@ -4,7 +4,7 @@ on:
     pull_request:
         # Re-run the version calculation when labels are added or when new commits are pushed
         types: [opened, synchronize, labeled, reopened, edited]
-        branches: [main, dev]
+        branches: [main]
 
 permissions:
     pull-requests: write

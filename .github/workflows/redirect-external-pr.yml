@@ -3,7 +3,7 @@ name: Redirect external PRs
 on:
     pull_request_target:
         types: [opened, reopened]
-        branches: [main, dev]
+        branches: [main]
 
 permissions:
     contents: write
@@ -16,15 +16,15 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            - name: Resolve dev branch SHA
-              id: devsha
+            - name: Resolve main branch SHA
+              id: mainsha
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
-                  DEV_SHA=$(gh api repos/${{ github.repository }}/git/ref/heads/dev --jq '.object.sha')
-                  echo "sha=$DEV_SHA" >> $GITHUB_OUTPUT
+                  MAIN_SHA=$(gh api repos/${{ github.repository }}/git/ref/heads/main --jq '.object.sha')
+                  echo "sha=$MAIN_SHA" >> $GITHUB_OUTPUT
 
-            - name: Create internal feature branch from dev
+            - name: Create internal feature branch from main
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
@@ -34,11 +34,11 @@ jobs:
                   SAFE_SOURCE_BRANCH=$(echo "$SOURCE_BRANCH" | tr '/' '-')
                   NEW_BRANCH="feature/external/pr-${PR_NUMBER}-${SAFE_SOURCE_BRANCH}"
 
-                  echo "Creating branch $NEW_BRANCH from dev"
+                  echo "Creating branch $NEW_BRANCH from main"
 
                   gh api repos/${{ github.repository }}/git/refs \
                     -f ref="refs/heads/$NEW_BRANCH" \
-                    -f sha="${{ steps.devsha.outputs.sha }}"
+                    -f sha="${{ steps.mainsha.outputs.sha }}"
 
             - name: Retarget PR to new branch
               env:

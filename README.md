@@ -4,9 +4,14 @@ A POC/Prototype arbitrary code modloader for Kitten Space Agency.
 Currently this loader can be ran with this functionality in the background, or as a dumb loader just loading mods.  
 It makes use of Assembly Load Contexts to ensure mod dependencies are managed seperatly, reducing conflicts
 
+## Releases
+
+To publish a release, create and push a semantic-version tag such as `1.2.3` on the commit to release. The release workflow builds the release and installer from that commit; tags can point to commits on any branch.
+
 ## Installation
 
 -   Download and unzip release from [Releases](https://github.com/StarMapLoader/StarMap/releases/latest).
+-   Install the [.NET 10 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) for Windows x64 if it is not already installed.
 -   Run StarMap.exe, this will fail and create a StarMapConfig.json.
 -   Open StarMapConfig.json and set the location of your KSA installation.
     -   `GameLocation` should be set to the location where Kitten Space Agency was installed, pointing directly to that folder (e.g. `C:\\games\\Kitten Space Agency\\`)
