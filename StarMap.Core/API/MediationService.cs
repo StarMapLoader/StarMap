@@ -18,7 +18,7 @@ namespace StarMap.Core.API
 
         public IEventPublisher<T> GetPublisher<T>() where T : IStarMapEvent
         {
-            return _mediator.GetPublisher<T>(_mod);
+            return _mediator.RegisterPublisher<T>(_mod);
         }
 
         public ISubscription<T> Subscribe<T>(Action<T> handler) where T : IStarMapEvent

@@ -7,9 +7,11 @@ namespace StarMap.Core.Services
 {
     internal interface IMediator
     {
-        IEventPublisher<T> GetPublisher<T>(RuntimeMod mod) where T : IStarMapEvent;
+        IEventPublisher<T> RegisterPublisher<T>(RuntimeMod mod) where T : IStarMapEvent;
         ISubscription<T> Subscribe<T>(Action<T> action) where T : IStarMapEvent;
     }
+
+    public interface IEventPublisher { }
 
     internal class SubscriptionHandle<T> : ISubscription<T> where T : IStarMapEvent
     {
@@ -34,16 +36,21 @@ namespace StarMap.Core.Services
         }
     }
 
-    internal abstract class EventPublisher<T>() : IEventPublisher<T> where T : IStarMapEvent
+    internal class EventPublisher<T>(Mediator mediator) : IEventPublisher<T>, IEventPublisher where T : IStarMapEvent
     {
-        protected readonly HashSet<SubscriptionHandle<T>> _handlers = [];
+        private readonly Lock _lock = new();
+
+        private bool _isDisposed;
+
+        private readonly HashSet<SubscriptionHandle<T>> _handlers = [];
 
         public ISubscription<T> Subscribe(Action<T> action)
         {
             var handle = new SubscriptionHandle<T>(this, action);
 
-            lock (_handlers)
+            lock (_lock)
             {
+                ObjectDisposedException.ThrowIf(_isDisposed, this);
                 _handlers.Add(handle);
             }
 
@@ -52,39 +59,59 @@ namespace StarMap.Core.Services
 
         public void Unsubscribe(SubscriptionHandle<T> handle)
         {
-            lock (_handlers)
+            lock (_lock)
             {
+                if (_isDisposed)
+                    return;
+
                 _handlers.Remove(handle);
             }
         }
 
         public void Publish(T message)
         {
-            PublishInner(message);
-        }
-
-        public abstract void PublishInner(T message);
-    }
-
-    internal class SerialEventPublisher<T>() : EventPublisher<T> where T : IStarMapEvent
-    {
-        public override void PublishInner(T message)
-        {
-            foreach (var handler in _handlers)
+            foreach (var handler in GetHandlersSnapshot())
             {
                 handler.Invoke(message);
             }
         }
-    }
 
-    internal class ParallelEventPublisher<T>() : EventPublisher<T> where T : IStarMapEvent
-    {
-        public override void PublishInner(T message)
+        public Task PublishParallel(T message)
         {
-            foreach (var handler in _handlers)
+            var tasks = new List<Task>();
+
+            foreach (var handler in GetHandlersSnapshot())
             {
-                _ = Task.Run(() => handler.Invoke(message));
+                tasks.Add(Task.Run(() => handler.Invoke(message)));
             }
+
+            return Task.WhenAll(tasks);
+        }
+
+        private SubscriptionHandle<T>[] GetHandlersSnapshot()
+        {
+            lock (_lock)
+            {
+                if (_isDisposed)
+                    return [];
+
+                return [.. _handlers];
+            }
+        }
+
+        public void Dispose()
+        {
+            lock (_lock)
+            {
+                if (_isDisposed)
+                    return;
+
+                _isDisposed = true;
+
+                mediator.UnregisterPublisher<T>(this);
+                _handlers.Clear();
+            }
+
         }
     }
 
@@ -92,23 +119,23 @@ namespace StarMap.Core.Services
     {
         private readonly ConcurrentDictionary<Type, IEventPublisher> _publishers = [];
 
-        public IEventPublisher<T> GetPublisher<T>(RuntimeMod mod) where T : IStarMapEvent
+        public IEventPublisher<T> RegisterPublisher<T>(RuntimeMod mod) where T : IStarMapEvent
         {
             var type = typeof(T);
             if (AssemblyLoadContext.GetLoadContext(typeof(T).Assembly) != mod.ModAssemblyLoadContext)
                 throw new Exception("Events are only allowed to be published by the owner of the event type");
 
-            EventPublisher<T> publisher;
-
-            if (type.IsAssignableTo(typeof(ISerialStarMapEvent)))
-                publisher = new SerialEventPublisher<T>();
-            else
-                publisher = new ParallelEventPublisher<T>();
+            var publisher = new EventPublisher<T>(this);
 
             if (!_publishers.TryAdd(type, publisher))
                 throw new Exception($"A publisher for type '{typeof(T)}' was already registered");
 
             return publisher;
+        }
+
+        public void UnregisterPublisher<T>(IEventPublisher publisher)
+        {
+            _publishers.TryRemove(new(typeof(T), publisher));
         }
 
         public ISubscription<T> Subscribe<T>(Action<T> action) where T : IStarMapEvent
