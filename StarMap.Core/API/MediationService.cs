@@ -16,7 +16,7 @@ namespace StarMap.Core.API
             _mediator = mediator;
         }
 
-        public IEventPublisher<T> GetPublisher<T>() where T : IStarMapEvent
+        public IEventPublisher<T> RegisterPublisher<T>() where T : IStarMapEvent
         {
             return _mediator.RegisterPublisher<T>(_mod);
         }
