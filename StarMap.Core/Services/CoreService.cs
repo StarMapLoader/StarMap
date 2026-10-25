@@ -8,11 +8,12 @@ namespace StarMap.Core.Services
         void Init();
     }
 
-    internal class CoreService(IStarMapPatches _starmapPatches, IModsLoader _modsLoader) : ICoreService
+    internal class CoreService(IStarMapPatches _starmapPatches, ISaveLoadPatches _saveLoadPatches, IModsLoader _modsLoader) : ICoreService
     {
         public void Init()
         {
             _starmapPatches.Init();
+            _saveLoadPatches.Init();
             _modsLoader.Init();
         }
     }

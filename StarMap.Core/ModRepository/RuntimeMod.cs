@@ -155,6 +155,8 @@ namespace StarMap.Core.ModRepository
                     {
                         case StarMapBeforeMainAttribute:
                         case StarMapUnloadAttribute:
+                        case StarMapAfterSaveAttribute:
+                        case StarMapAfterLoadAttribute:
                             modRegistry.AddModMethod(ModId, attr, modObject, classMethod);
                             break;
                         case StarMapAllModsLoadedAttribute:

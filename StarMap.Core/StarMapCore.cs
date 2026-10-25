@@ -22,6 +22,7 @@ namespace StarMap.Core
             serviceCollection.AddSingleton<IPatchManager, PatchManager>();
             serviceCollection.AddSingleton<IModsLoader, ModsLoader>();
             serviceCollection.AddSingleton<IStarMapPatches, StarMapPatches>();
+            serviceCollection.AddSingleton<ISaveLoadPatches, SaveLoadPatches>();
             serviceCollection.AddSingleton<IModMenu, ModMenu>();
             serviceCollection.AddSingleton<IMediator, Mediator>();
             serviceCollection.AddSingleton<IModServices, ModServices>();
