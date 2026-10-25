@@ -6,7 +6,7 @@ The services currently registered in that scope are:
 
 - `IModServiceRegistry` for registering and retrieving services shared between mods
 - `IModMenuService` for adding items to KSA's **Mods** menu
-- `IMediationService` for publishing and subscribing to typed events
+- `IEventBus` for publishing and subscribing to typed messages
 - `IPatchService` for registering method patches
 
 ## Request services
@@ -34,4 +34,3 @@ Use one public constructor, and ensure its parameters can be resolved from the s
 Constructor injection applies only to the `[StarMapMod]` entry class. Lifecycle callbacks are called with their documented fixed signatures; StarMap does not inject their parameters. See [lifecycle callbacks](lifecycle.md).
 
 Each mod has its own dependency-injection scope. Keep injected services on the entry class instance, and dispose handles returned by services, such as menu items, event publishers, and event subscriptions, in `[StarMapUnload]`. For cross-mod service contracts and registration, see [mod-provided services](mod-services.md).
-

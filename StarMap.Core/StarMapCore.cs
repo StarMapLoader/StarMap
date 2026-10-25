@@ -29,7 +29,7 @@ namespace StarMap.Core
             serviceCollection.AddScoped<IModContext, ModContext>();
             serviceCollection.AddScoped<IPatchService, PatchService>();
             serviceCollection.AddScoped<IModMenuService, ModMenuService>();
-            serviceCollection.AddScoped<IMediationService, MediationService>();
+            serviceCollection.AddScoped<IEventBus, EventBus>();
             serviceCollection.AddScoped<IModServiceRegistry, ModServiceRegistry>();
 
             serviceCollection.AddSingleton<ICoreService, CoreService>();
