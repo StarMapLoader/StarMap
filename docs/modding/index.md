@@ -15,7 +15,7 @@ HelloStarMap/
 `-- any private dependency assemblies
 ```
 
-Start with the [first-mod walkthrough](first-mod.md). Then read about [lifecycle callbacks](lifecycle.md), [services and mechanics](services.md), and [mod dependencies](dependencies.md). The service overview links to separate guides for [constructor injection](constructor-injection.md), [mod-provided services](mod-services.md), [menu items](mod-menu.md), [event mediation](event-mediation.md), and [method patching](patching.md).
+Start with the [first-mod walkthrough](first-mod.md). Then read about [lifecycle callbacks](lifecycle.md), [services and mechanics](services.md), and [mod dependencies](dependencies.md). The service overview links to separate guides for [constructor injection](constructor-injection.md), [mod-provided services](mod-services.md), [menu items](mod-menu.md), the [typed event bus](event-bus.md), and [method patching](patching.md).
 
 ## Entry assembly and mod ID
 
