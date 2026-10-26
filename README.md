@@ -1,5 +1,7 @@
 # StarMap
 
+[简体中文](README.zh-CN.md)
+
 A POC/Prototype arbitrary code modloader for Kitten Space Agency.  
 Currently this loader can be ran with this functionality in the background, or as a dumb loader just loading mods.  
 It makes use of Assembly Load Contexts to ensure mod dependencies are managed seperatly, reducing conflicts
