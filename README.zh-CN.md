@@ -6,9 +6,20 @@ StarMap 是用于 Kitten Space Agency 的概念验证（POC）/原型代码模�
 目前，加载器既可在后台运行，也可作为仅负责加载模组的简单加载器使用。
 它使用程序集加载上下文（Assembly Load Contexts）分别管理模组依赖，以减少冲突。
 
+## 文档
+
+[StarMap 文档](https://starmaploader.github.io/StarMap/)介绍了安装、使用和模组开发，Markdown 源文件位于 [`docs`](https://github.com/StarMapLoader/StarMap/tree/main/docs/) 目录。
+
+## 发布
+
+如需发布版本，请在要发布的提交上创建并推送语义化版本标签，例如 `1.2.3`。发布工作流会从该提交构建发布包和安装程序；标签可以指向任意分支上的提交。
+
+文档站点跟随当前发布版本更新，不为旧版本保留独立的文档快照。当前候选发布版的文档可在 [RC 文档站点](https://starmaploader.github.io/StarMap/rc/)查看。
+
 ## 安装
 
 -   从 [Releases](https://github.com/StarMapLoader/StarMap/releases/latest) 下载并解压发布包。
+-   如果尚未安装，请先安装 Windows x64 版 [.NET 10 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)。
 -   首次运行 `StarMap.exe` 时会因缺少配置而无法启动游戏，并生成 `StarMapConfig.json`。
 -   打开 `StarMapConfig.json`，设置 KSA 的安装位置。
     -   `GameLocation` 应直接指向 Kitten Space Agency 的安装目录（例如 `C:\\games\\Kitten Space Agency\\`）。
