@@ -102,7 +102,7 @@ Named channels are scoped to the message type; the same name used with a differe
 
 ## Message delivery
 
-`Publish` invokes the current subscribers synchronously on the calling thread. Handlers for one publish call run one at a time, but their order is not guaranteed. There is no parallel-publish or worker-thread dispatch API. A handler exception propagates from `Publish` and stops delivery for that call. Concurrent publish calls can invoke the same handler concurrently, so protect shared state as needed.
+`Publish` invokes the current subscribers synchronously on the calling thread. Handlers for one publish call run one at a time, but their order is not guaranteed. There is no parallel-publish or worker-thread dispatch API. If a handler throws, the bus logs the exception and continues delivering the message to the remaining subscribers. Concurrent publish calls can invoke the same handler concurrently, so protect shared state as needed.
 
 ## Sharing message types between mods
 
