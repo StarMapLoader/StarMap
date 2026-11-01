@@ -28,12 +28,12 @@ namespace StarMap.Core.API
 
         public ISubscription<T> Subscribe<T>(Action<T> handler)
         {
-            return _mediator.Subscribe(handler);
+            return _mediator.Subscribe(_mod, handler);
         }
 
         public ISubscription<T> Subscribe<T>(Action<T> handler, string eventName)
         {
-            return _mediator.Subscribe(handler, eventName);
+            return _mediator.Subscribe(_mod, handler, eventName);
         }
     }
 }

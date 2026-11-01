@@ -18,6 +18,7 @@ namespace StarMap.Core
         {
             var serviceCollection = new ServiceCollection();
             serviceCollection.AddKeyedSingleton("Core", coreAssemblyLoadContext);
+            serviceCollection.AddSingleton<ILogger, Logger>();
             serviceCollection.AddSingleton<IServiceProviderService, ServiceProviderService>();
             serviceCollection.AddSingleton<IPatchManager, PatchManager>();
             serviceCollection.AddSingleton<IModsLoader, ModsLoader>();

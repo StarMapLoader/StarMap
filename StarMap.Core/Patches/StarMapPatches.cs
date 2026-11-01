@@ -1,6 +1,7 @@
 ﻿using HarmonyLib;
 using KSA;
 using StarMap.API.Services;
+using StarMap.Core.Services;
 using StarMap.Core.UI.ConfirmRestart;
 using System.Diagnostics;
 
@@ -14,10 +15,12 @@ namespace StarMap.Core.Patches
     internal class StarMapPatches : IStarMapPatches
     {
         private readonly IPatchManager _patchManager;
+        private readonly ILogger _logger;
 
-        public StarMapPatches(IPatchManager patchManager)
+        public StarMapPatches(IPatchManager patchManager, ILogger logger)
         {
             _patchManager = patchManager;
+            _logger = logger;
         }
 
         public void Init()
@@ -50,13 +53,13 @@ namespace StarMap.Core.Patches
 
                 if (confirmRestart.Restart)
                 {
-                    Console.WriteLine("StarMap - RESTARTING");
-                    Console.WriteLine("======================================");
+                    _logger.Information("StarMap - RESTARTING");
+                    _logger.Information("======================================");
 
                     var mainModule = Process.GetCurrentProcess().MainModule;
                     if (mainModule is null || Path.GetDirectoryName(mainModule.FileName) is not string starMapInstallLocation)
                     {
-                        Console.WriteLine("Unable to get StarMap install location for restart.");
+                        _logger.Warning("Unable to get StarMap install location for restart.");
                     }
                     else
                     {

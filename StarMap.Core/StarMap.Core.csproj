@@ -9,6 +9,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="Ahwoo.BRUTAL.Monitor.Common" />
+		<PackageReference Include="Ahwoo.BRUTAL.Monitor.Host" />
 		<PackageReference Include="Lib.Harmony" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" />
 		<PackageReference Include="Samboy063.Tomlet">
