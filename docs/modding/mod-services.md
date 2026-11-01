@@ -1,6 +1,6 @@
 # Mod-provided services
 
-`IModServiceRegistry` lets a provider mod expose an object through a shared service contract so dependent mods can use it. This is separate from StarMap's built-in services such as `IModMenuService` and `IMediationService`.
+`IModServiceRegistry` lets a provider mod expose an object through a shared service contract so dependent mods can use it. This is separate from StarMap's built-in services such as `IModMenuService` and `IEventBus`.
 
 ## Define and share a contract
 

@@ -18,4 +18,4 @@ The callback methods return `void`. Use the exact parameter types and counts; me
 
 ## Constructor-injected services
 
-StarMap provides `IModServiceRegistry`, `IModMenuService`, `IMediationService`, and `IPatchService` through the entry class constructor. See [constructor injection](constructor-injection.md) for the injection mechanism and the individual pages for [mod-provided services](mod-services.md), [menu items](mod-menu.md), [event mediation](event-mediation.md), and [method patching](patching.md) for their usage.
+StarMap provides `IModServiceRegistry`, `IModMenuService`, `IEventBus`, and `IPatchService` through the entry class constructor. See [constructor injection](constructor-injection.md) for the injection mechanism and the individual pages for [mod-provided services](mod-services.md), [menu items](mod-menu.md), the [typed event bus](event-bus.md), and [method patching](patching.md) for their usage.

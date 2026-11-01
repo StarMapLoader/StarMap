@@ -18,6 +18,7 @@ namespace StarMap.Core.ModRepository
         private readonly AssemblyLoadContext _coreAssemblyLoadContext;
         private readonly IPatchManager _patchManager;
         private readonly IServiceProviderService _serviceProviderService;
+        private readonly ILogger _logger;
 
         public static Dictionary<string, StarMapMethodAttribute> RegisteredMethodAttributes = [];
 
@@ -31,13 +32,14 @@ namespace StarMap.Core.ModRepository
             return (attrType.Name, attrObject);
         }
 
-        public ModsLoader([FromKeyedServices("Core")] AssemblyLoadContext coreAssemblyLoadContext, IPatchManager patchManager, IServiceProviderService serviceProviderService)
+        public ModsLoader([FromKeyedServices("Core")] AssemblyLoadContext coreAssemblyLoadContext, IPatchManager patchManager, IServiceProviderService serviceProviderService, ILogger logger)
         {
             _coreAssemblyLoadContext = coreAssemblyLoadContext;
             _patchManager = patchManager;
             _serviceProviderService = serviceProviderService;
+            _logger = logger;
 
-            Assembly coreAssembly = typeof(StarMapModAttribute).Assembly;
+            var coreAssembly = typeof(StarMapModAttribute).Assembly;
 
             RegisteredMethodAttributes = coreAssembly
                 .GetTypes()
@@ -70,7 +72,7 @@ namespace StarMap.Core.ModRepository
             {
                 if (!mod.Enabled)
                 {
-                    Console.WriteLine($"StarMap - Not loading mod: {mod.Id} because it is disabled in manifest");
+                    _logger.Information($"StarMap - Not loading mod: {mod.Id} because it is disabled in manifest");
                     continue;
                 }
 
@@ -81,17 +83,17 @@ namespace StarMap.Core.ModRepository
 
                 if (!runtimeMod.AllDependenciesLoaded(ModRegistry))
                 {
-                    Console.WriteLine($"StarMap - Delaying load of mod: {runtimeMod.ModId} due to missing dependencies: {string.Join(", ", runtimeMod.NotLoadedModDependencies.Keys)}");
+                    _logger.Information($"StarMap - Delaying load of mod: {runtimeMod.ModId} due to missing dependencies: {string.Join(", ", runtimeMod.NotLoadedModDependencies.Keys)}");
                     continue;
                 }
 
                 if (!runtimeMod.InitializeMod(ModRegistry, _patchManager, _serviceProviderService))
                 {
-                    Console.WriteLine($"StarMap - Failed to initialize mod: {runtimeMod.ModId} from manifest");
+                    _logger.Warning($"StarMap - Failed to initialize mod: {runtimeMod.ModId} from manifest");
                     continue;
                 }
 
-                Console.WriteLine($"StarMap - Loaded mod: {runtimeMod.ModId} from manifest");
+                _logger.Information($"StarMap - Loaded mod: {runtimeMod.ModId} from manifest");
 
                 var dependentMods = runtimeMod.CheckForDependentMods(ModRegistry);
 
@@ -99,11 +101,11 @@ namespace StarMap.Core.ModRepository
                 {
                     if (dependentMod.InitializeMod(ModRegistry, _patchManager, _serviceProviderService))
                     {
-                        Console.WriteLine($"StarMap - Loaded mod: {dependentMod.ModId} after loading {runtimeMod.ModId}");
+                        _logger.Information($"StarMap - Loaded mod: {dependentMod.ModId} after loading {runtimeMod.ModId}");
                     }
                     else
                     {
-                        Console.WriteLine($"StarMap - Failed to load mod: {dependentMod.ModId} after loading {runtimeMod.ModId}");
+                        _logger.Warning($"StarMap - Failed to load mod: {dependentMod.ModId} after loading {runtimeMod.ModId}");
                     }
                 }
             }
@@ -127,11 +129,11 @@ namespace StarMap.Core.ModRepository
 
                         if (waitingMod.InitializeMod(ModRegistry, _patchManager, _serviceProviderService))
                         {
-                            Console.WriteLine($"StarMap - Loaded mod: {waitingMod.ModId} after all mods were loaded, not loaded optional mods: {string.Join(",", waitingMod.NotLoadedModDependencies.Values.Select(mod => mod.ModId))}");
+                            _logger.Information($"StarMap - Loaded mod: {waitingMod.ModId} after all mods were loaded, not loaded optional mods: {string.Join(",", waitingMod.NotLoadedModDependencies.Values.Select(mod => mod.ModId))}");
                         }
                         else
                         {
-                            Console.WriteLine($"StarMap - Failed to load mod:{waitingMod.ModId} after all mods were loaded, not loaded optional mods: {string.Join(",", waitingMod.NotLoadedModDependencies.Values.Select(mod => mod.ModId))}");
+                            _logger.Warning($"StarMap - Failed to load mod:{waitingMod.ModId} after all mods were loaded, not loaded optional mods: {string.Join(",", waitingMod.NotLoadedModDependencies.Values.Select(mod => mod.ModId))}");
                         }
                         waitingMod.NotLoadedModDependencies.Clear();
                     }
@@ -142,7 +144,7 @@ namespace StarMap.Core.ModRepository
             {
                 foreach (var waitingMod in ModRegistry.WaitingMods)
                 {
-                    Console.WriteLine($"StarMap - Failed to load mod:{waitingMod.ModId} after all mods were loaded, missing mods (some may be optional): {string.Join(",", waitingMod.NotLoadedModDependencies.Values.Select(mod => mod.ModId))}");
+                    _logger.Warning($"StarMap - Failed to load mod:{waitingMod.ModId} after all mods were loaded, missing mods (some may be optional): {string.Join(",", waitingMod.NotLoadedModDependencies.Values.Select(mod => mod.ModId))}");
                 }
                 ModRegistry.WaitingMods.Clear();
             }

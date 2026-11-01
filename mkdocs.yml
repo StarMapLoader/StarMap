@@ -34,7 +34,7 @@ nav:
           - Constructor injection: modding/constructor-injection.md
           - Mod-provided services: modding/mod-services.md
           - In-game menu items: modding/mod-menu.md
-          - Typed event mediation: modding/event-mediation.md
+          - Typed event bus: modding/event-bus.md
           - Method patching: modding/patching.md
       - Dependencies: modding/dependencies.md
   - Maintainers: maintainers.md
