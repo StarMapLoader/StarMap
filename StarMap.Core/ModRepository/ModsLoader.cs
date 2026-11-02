@@ -10,6 +10,8 @@ namespace StarMap.Core.ModRepository
 {
     internal interface IModsLoader : IDisposable
     {
+        ModRegistry ModRegistry { get; }
+
         void Init();
     }
 
