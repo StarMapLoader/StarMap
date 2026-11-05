@@ -26,6 +26,7 @@ namespace StarMap.Core.Patches
         public void Init()
         {
             _patchManager.RegisterStaticVoidPatch(IPatchService.PatchType.Prefix, null, typeof(ModLibrary).GetMethod(nameof(ModLibrary.PrepareAll))!, BeforePrepareAll);
+            _patchManager.RegisterStaticVoidPatch(IPatchService.PatchType.Postfix, null, typeof(ModLibrary).GetMethod(nameof(ModLibrary.PrepareAll))!, _ => ModManifestIndexFix.AfterPrepareAll(_logger));
 
             if (DocumentsPathOverride.ShouldApplyOverride())
                 _patchManager.RegisterStaticPatch<string>(IPatchService.PatchType.Prefix, null, AccessTools.PropertyGetter(typeof(Constants), nameof(Constants.DocumentsFolderPath)), DocumentsPathOverride.BeforeDocumentsFolderPath);
