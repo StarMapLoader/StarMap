@@ -1,4 +1,5 @@
 ﻿using StarMap.API.Services;
+using StarMap.Core.ModRepository;
 using StarMap.Core.Patches;
 using System.Reflection;
 
@@ -6,8 +7,8 @@ namespace StarMap.Core.API
 {
     internal class PatchService : IPatchService
     {
-        private IPatchManager _patchManager;
-        private IModContext _modContext;
+        private readonly IPatchManager _patchManager;
+        private readonly IModContext _modContext;
 
         public PatchService(IPatchManager patchManager, IModContext mod)
         {
@@ -15,25 +16,65 @@ namespace StarMap.Core.API
             _modContext = mod;
         }
 
-        void IPatchService.RegisterInstancePatch<T, U>(IPatchService.PatchType type, MethodBase method, IPatchService.InstanceCallback<T, U> callback)
+        public IDisposable RegisterInstancePatch<T, U>(IPatchService.PatchType type, MethodBase method, IPatchService.InstanceCallback<T, U> callback)
 
         {
-            _patchManager.RegisterInstancePatch(type, _modContext.Mod, method, callback);
+            var patch = _patchManager.RegisterInstancePatch(type, _modContext.Mod, method, callback);
+            var patchHandle = new PatchDisposeHandle()
+            {
+                Patch = patch,
+                Mod = _modContext.Mod
+            };
+            _modContext.Mod.Patches.Add(patchHandle);
+            return patchHandle;
         }
 
-        void IPatchService.RegisterInstanceVoidPatch<T>(IPatchService.PatchType type, MethodBase method, IPatchService.InstanceVoidCallback<T> callback)
+        public IDisposable RegisterInstanceVoidPatch<T>(IPatchService.PatchType type, MethodBase method, IPatchService.InstanceVoidCallback<T> callback)
         {
-            _patchManager.RegisterInstanceVoidPatch(type, _modContext.Mod, method, callback);
+            var patch = _patchManager.RegisterInstanceVoidPatch(type, _modContext.Mod, method, callback);
+            var patchHandle = new PatchDisposeHandle()
+            {
+                Patch = patch,
+                Mod = _modContext.Mod
+            };
+            _modContext.Mod.Patches.Add(patchHandle);
+            return patchHandle;
         }
 
-        void IPatchService.RegisterStaticPatch<U>(IPatchService.PatchType type, MethodBase method, IPatchService.StaticCallback<U> callback)
+        public IDisposable RegisterStaticPatch<U>(IPatchService.PatchType type, MethodBase method, IPatchService.StaticCallback<U> callback)
         {
-            _patchManager.RegisterStaticPatch(type, _modContext.Mod, method, callback);
+            var patch = _patchManager.RegisterStaticPatch(type, _modContext.Mod, method, callback);
+            var patchHandle = new PatchDisposeHandle()
+            {
+                Patch = patch,
+                Mod = _modContext.Mod
+            };
+            _modContext.Mod.Patches.Add(patchHandle);
+            return patchHandle;
         }
 
-        void IPatchService.RegisterStaticVoidPatch(IPatchService.PatchType type, MethodBase method, IPatchService.StaticVoidCallback callback)
+        public IDisposable RegisterStaticVoidPatch(IPatchService.PatchType type, MethodBase method, IPatchService.StaticVoidCallback callback)
         {
-            _patchManager.RegisterStaticVoidPatch(type, _modContext.Mod, method, callback);
+            var patch = _patchManager.RegisterStaticVoidPatch(type, _modContext.Mod, method, callback);
+            var patchHandle = new PatchDisposeHandle()
+            {
+                Patch = patch,
+                Mod = _modContext.Mod
+            };
+            _modContext.Mod.Patches.Add(patchHandle);
+            return patchHandle;
+        }
+
+        private class PatchDisposeHandle : IDisposable
+        {
+            public required RuntimeMod Mod { get; init; }
+            public required IDisposable Patch { get; init; }
+
+            public void Dispose()
+            {
+                Patch.Dispose();
+                Mod.Patches.Remove(this);
+            }
         }
     }
 }

@@ -95,19 +95,7 @@ namespace StarMap.Core.ModRepository
 
                 _logger.Information($"StarMap - Loaded mod: {runtimeMod.ModId} from manifest");
 
-                var dependentMods = runtimeMod.CheckForDependentMods(ModRegistry);
-
-                foreach (var dependentMod in dependentMods)
-                {
-                    if (dependentMod.InitializeMod(ModRegistry, _patchManager, _serviceProviderService))
-                    {
-                        _logger.Information($"StarMap - Loaded mod: {dependentMod.ModId} after loading {runtimeMod.ModId}");
-                    }
-                    else
-                    {
-                        _logger.Warning($"StarMap - Failed to load mod: {dependentMod.ModId} after loading {runtimeMod.ModId}");
-                    }
-                }
+                LoadDependentMods(runtimeMod);
             }
 
             TryLoadWaitingMods();
@@ -120,22 +108,28 @@ namespace StarMap.Core.ModRepository
             while (ModRegistry.WaitingModsDependencyGraph.Count > 0 && loadedMod)
             {
                 loadedMod = false;
-                foreach (var waitingMod in ModRegistry.WaitingMods)
+                foreach (var waitingMod in ModRegistry.WaitingMods.ToList())
                 {
+                    if (!ModRegistry.WaitingMods.Contains(waitingMod)) continue;
+
                     if (waitingMod.NotLoadedModDependencies.Count == 0 || waitingMod.NotLoadedModDependencies.Values.All(dependencyInfo => dependencyInfo.Optional))
                     {
                         loadedMod = true;
                         ModRegistry.WaitingMods.Remove(waitingMod);
+                        RemoveWaitingDependencyEdges(waitingMod);
 
                         if (waitingMod.InitializeMod(ModRegistry, _patchManager, _serviceProviderService))
                         {
                             _logger.Information($"StarMap - Loaded mod: {waitingMod.ModId} after all mods were loaded, not loaded optional mods: {string.Join(",", waitingMod.NotLoadedModDependencies.Values.Select(mod => mod.ModId))}");
+                            LoadDependentMods(waitingMod);
                         }
                         else
                         {
                             _logger.Warning($"StarMap - Failed to load mod:{waitingMod.ModId} after all mods were loaded, not loaded optional mods: {string.Join(",", waitingMod.NotLoadedModDependencies.Values.Select(mod => mod.ModId))}");
                         }
                         waitingMod.NotLoadedModDependencies.Clear();
+
+
                     }
                 }
             }
@@ -147,6 +141,35 @@ namespace StarMap.Core.ModRepository
                     _logger.Warning($"StarMap - Failed to load mod:{waitingMod.ModId} after all mods were loaded, missing mods (some may be optional): {string.Join(",", waitingMod.NotLoadedModDependencies.Values.Select(mod => mod.ModId))}");
                 }
                 ModRegistry.WaitingMods.Clear();
+            }
+        }
+
+        private void RemoveWaitingDependencyEdges(RuntimeMod waitingMod)
+        {
+            foreach (var dependencyId in waitingMod.NotLoadedModDependencies.Keys)
+            {
+                if (!ModRegistry.WaitingModsDependencyGraph.TryGetValue(dependencyId, out var dependents))
+                    continue;
+
+                dependents.RemoveAll(dependent => ReferenceEquals(dependent, waitingMod));
+                if (dependents.Count == 0)
+                    ModRegistry.WaitingModsDependencyGraph.Remove(dependencyId);
+            }
+        }
+
+        private void LoadDependentMods(RuntimeMod runtimeMod)
+        {
+            foreach (var dependentMod in runtimeMod.CheckForDependentMods(ModRegistry))
+            {
+                if (dependentMod.InitializeMod(ModRegistry, _patchManager, _serviceProviderService))
+                {
+                    _logger.Information($"StarMap - Loaded mod: {dependentMod.ModId} after loading {runtimeMod.ModId}");
+                    LoadDependentMods(dependentMod);
+                }
+                else
+                {
+                    _logger.Warning($"StarMap - Failed to load mod: {dependentMod.ModId} after loading {runtimeMod.ModId}");
+                }
             }
         }
 

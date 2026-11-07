@@ -1,16 +1,18 @@
 ﻿using HarmonyLib;
 using StarMap.API.Services;
 using StarMap.Core.ModRepository;
+using StarMap.Core.Services;
 using System.Reflection;
+using static StarMap.API.Services.IPatchService;
 
 namespace StarMap.Core.Patches
 {
     internal interface IPatchManager : IDisposable
     {
-        void RegisterInstancePatch<T, U>(IPatchService.PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.InstanceCallback<T, U> callback);
-        void RegisterInstanceVoidPatch<T>(IPatchService.PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.InstanceVoidCallback<T> callback);
-        void RegisterStaticPatch<U>(IPatchService.PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.StaticCallback<U> callback);
-        void RegisterStaticVoidPatch(IPatchService.PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.StaticVoidCallback callback);
+        IDisposable RegisterInstancePatch<T, U>(PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.InstanceCallback<T, U> callback);
+        IDisposable RegisterInstanceVoidPatch<T>(PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.InstanceVoidCallback<T> callback);
+        IDisposable RegisterStaticPatch<U>(PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.StaticCallback<U> callback);
+        IDisposable RegisterStaticVoidPatch(PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.StaticVoidCallback callback);
     }
 
     internal class PatchManager : IPatchManager
@@ -19,35 +21,35 @@ namespace StarMap.Core.Patches
         public static HarmonyMethod PrefixEntryPointVoid { get; } = new HarmonyMethod(typeof(PatchManager).GetMethod(nameof(PrefixPatchEntryPointVoid), BindingFlags.Static | BindingFlags.Public));
         public static HarmonyMethod PostfixEntryPointVoid { get; } = new HarmonyMethod(typeof(PatchManager).GetMethod(nameof(PostfixPatchEntryPointVoid), BindingFlags.Static | BindingFlags.Public));
 
+        private readonly ILogger _logger;
         private readonly Harmony _harmony;
 
         private readonly Dictionary<MethodBase, MethodPatch> _patches = new();
 
-
-        public PatchManager()
+        public PatchManager(ILogger logger)
         {
+            _logger = logger;
             _harmony = new("com.starmap.core");
 
             _instance = this;
         }
 
-        public void RegisterInstancePatch<T, U>(IPatchService.PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.InstanceCallback<T, U> callback)
+        public IDisposable RegisterInstancePatch<T, U>(PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.InstanceCallback<T, U> callback)
         {
-            GetOrCreateMethodPatch(method).RegisterPatch(patchType, mod, new InstanceCallback<T, U>(callback));
+            return GetOrCreateMethodPatch(method).RegisterPatch(patchType, mod, new InstanceCallback<T, U>(callback), _logger);
         }
-        public void RegisterInstanceVoidPatch<T>(IPatchService.PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.InstanceVoidCallback<T> callback)
+        public IDisposable RegisterInstanceVoidPatch<T>(PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.InstanceVoidCallback<T> callback)
         {
-            GetOrCreateMethodPatch(method).RegisterPatch(patchType, mod, new InstanceVoidCallback<T>(callback));
-        }
-
-        public void RegisterStaticPatch<U>(IPatchService.PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.StaticCallback<U> callback)
-        {
-            GetOrCreateMethodPatch(method).RegisterPatch(patchType, mod, new StaticCallback<U>(callback));
+            return GetOrCreateMethodPatch(method).RegisterPatch(patchType, mod, new InstanceVoidCallback<T>(callback), _logger);
         }
 
-        public void RegisterStaticVoidPatch(IPatchService.PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.StaticVoidCallback callback)
+        public IDisposable RegisterStaticPatch<U>(PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.StaticCallback<U> callback)
         {
-            GetOrCreateMethodPatch(method).RegisterPatch(patchType, mod, new StaticVoidCallback(callback));
+            return GetOrCreateMethodPatch(method).RegisterPatch(patchType, mod, new StaticCallback<U>(callback), _logger);
+        }
+        public IDisposable RegisterStaticVoidPatch(PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.StaticVoidCallback callback)
+        {
+            return GetOrCreateMethodPatch(method).RegisterPatch(patchType, mod, new StaticVoidCallback(callback), _logger);
         }
 
 
@@ -149,249 +151,294 @@ namespace StarMap.Core.Patches
                 patch.Value.Dispose();
             }
         }
-    }
 
-    internal interface IPatchCallback
-    {
-        bool Invoke(object[] args, object? instance, ref object? result);
+        #region Callbacks
 
-        static V CastValue<V>(object? value, string valueName)
+        private interface IPatchCallback
         {
-            if (value is V typedValue)
-                return typedValue;
+            bool Invoke(object[] args, object? instance, ref object? result);
 
-            if (value is null && default(V) is null)
-                return default!;
-
-            throw new InvalidOperationException(
-                $"Patch value '{valueName}' is incompatible with callback type '{typeof(V)}'. Actual type: '{value?.GetType().ToString() ?? "null"}'.");
-        }
-    }
-
-    internal interface IVoidCallback : IPatchCallback { }
-    internal interface IResultCallback : IPatchCallback
-    {
-        Type ResultType { get; }
-    }
-
-    internal class InstanceCallback<T, U>(IPatchService.InstanceCallback<T, U> callback) : IResultCallback
-    {
-        public Type ResultType => typeof(U);
-
-        public bool Invoke(object[] args, object? instance, ref object? result)
-        {
-            var typedInstance = IPatchCallback.CastValue<T>(instance, nameof(instance));
-            var typedResult = IPatchCallback.CastValue<U>(result, nameof(result));
-            var callNext = callback(args, typedInstance, ref typedResult);
-
-            result = typedResult;
-            return callNext;
-        }
-    }
-
-    internal class InstanceVoidCallback<T>(IPatchService.InstanceVoidCallback<T> callback) : IVoidCallback
-    {
-        public bool Invoke(object[] args, object? instance, ref object? result)
-        {
-            var typedInstance = IPatchCallback.CastValue<T>(instance, nameof(instance));
-            var callNext = callback(args, typedInstance);
-            return callNext;
-        }
-    }
-
-    internal class StaticCallback<U>(IPatchService.StaticCallback<U> callback) : IResultCallback
-    {
-        public Type ResultType => typeof(U);
-
-        public bool Invoke(object[] args, object? instance, ref object? result)
-        {
-            var typedResult = IPatchCallback.CastValue<U>(result, nameof(result));
-            var callNext = callback(args, ref typedResult);
-
-            result = typedResult;
-            return callNext;
-        }
-    }
-
-    internal class StaticVoidCallback(IPatchService.StaticVoidCallback callback) : IVoidCallback
-    {
-        public bool Invoke(object[] args, object? instance, ref object? result)
-        {
-            var callNext = callback(args);
-            return callNext;
-        }
-    }
-
-
-
-    internal class MethodPatch : IDisposable
-    {
-        private readonly Harmony _harmony;
-        private readonly MethodBase _method;
-
-        private MethodInfo? _prefixPatch;
-        private MethodInfo? _postfixPatch;
-
-        public MethodPatch(Harmony harmony, MethodBase method)
-        {
-            _harmony = harmony;
-            _method = method;
-        }
-
-        public void RegisterPatch(IPatchService.PatchType type, RuntimeMod? mod, IPatchCallback patchCallback)
-        {
-            if (patchCallback is IResultCallback resultCallback && GetReturnType() != resultCallback.ResultType)
+            static V CastValue<V>(object? value, string valueName)
             {
-                throw new ArgumentException(
-                    $"Result callback type '{resultCallback.ResultType}' does not match the return type '{GetReturnType()}' of '{_method}'.",
-                    nameof(patchCallback));
+                if (value is V typedValue)
+                    return typedValue;
+
+                if (value is null && default(V) is null)
+                    return default!;
+
+                throw new InvalidOperationException(
+                    $"Patch value '{valueName}' is incompatible with callback type '{typeof(V)}'. Actual type: '{value?.GetType().ToString() ?? "null"}'.");
+            }
+        }
+
+        private interface IVoidCallback : IPatchCallback { }
+        private interface IResultCallback : IPatchCallback
+        {
+            Type ResultType { get; }
+        }
+
+        private class InstanceCallback<T, U>(IPatchService.InstanceCallback<T, U> callback) : IResultCallback
+        {
+            public Type ResultType => typeof(U);
+
+            public bool Invoke(object[] args, object? instance, ref object? result)
+            {
+                var typedInstance = IPatchCallback.CastValue<T>(instance, nameof(instance));
+                var typedResult = IPatchCallback.CastValue<U>(result, nameof(result));
+                var callNext = callback(args, typedInstance, ref typedResult);
+
+                result = typedResult;
+                return callNext;
+            }
+        }
+
+        private class InstanceVoidCallback<T>(IPatchService.InstanceVoidCallback<T> callback) : IVoidCallback
+        {
+            public bool Invoke(object[] args, object? instance, ref object? result)
+            {
+                var typedInstance = IPatchCallback.CastValue<T>(instance, nameof(instance));
+                var callNext = callback(args, typedInstance);
+                return callNext;
+            }
+        }
+
+        private class StaticCallback<U>(IPatchService.StaticCallback<U> callback) : IResultCallback
+        {
+            public Type ResultType => typeof(U);
+
+            public bool Invoke(object[] args, object? instance, ref object? result)
+            {
+                var typedResult = IPatchCallback.CastValue<U>(result, nameof(result));
+                var callNext = callback(args, ref typedResult);
+
+                result = typedResult;
+                return callNext;
+            }
+        }
+
+        private class StaticVoidCallback(IPatchService.StaticVoidCallback callback) : IVoidCallback
+        {
+            public bool Invoke(object[] args, object? instance, ref object? result)
+            {
+                var callNext = callback(args);
+                return callNext;
+            }
+        }
+
+        #endregion
+
+        private class MethodPatch : IDisposable
+        {
+            public MethodBase Method => _method;
+
+            private readonly Harmony _harmony;
+            private readonly MethodBase _method;
+
+            private MethodInfo? _prefixPatch;
+            private MethodInfo? _postfixPatch;
+
+            public MethodPatch(Harmony harmony, MethodBase method)
+            {
+                _harmony = harmony;
+                _method = method;
             }
 
-            switch (type)
+            public IDisposable RegisterPatch(PatchType type, RuntimeMod? mod, IPatchCallback patchCallback, ILogger logger)
             {
-                case IPatchService.PatchType.Prefix:
-                    AddPrefix(mod, patchCallback);
-                    break;
-
-                case IPatchService.PatchType.Postfix:
-                    AddPostfix(mod, patchCallback);
-                    break;
-
-                default:
-                    throw new InvalidOperationException("Unknown type " + type);
-            }
-            ;
-        }
-
-        public void UnregisterPatch(IPatchService.PatchType type, RuntimeMod? mod)
-        {
-            switch (type)
-            {
-                case IPatchService.PatchType.Prefix:
-                    RemovePrefix(mod);
-                    break;
-
-                case IPatchService.PatchType.Postfix:
-                    RemovePostfix(mod);
-                    break;
-
-                default:
-                    throw new InvalidOperationException("Unknown type " + type);
-            }
-            ;
-        }
-
-
-        public bool Invoke(HarmonyPatchType type, object[] args, object? instance, ref object? result)
-        {
-            var callNext = true;
-
-            foreach (var (_, callback) in GetActions(type))
-            {
-                if (!callback.Invoke(args, instance, ref result))
+                if (patchCallback is IResultCallback resultCallback && GetReturnType() != resultCallback.ResultType)
                 {
-                    callNext = false;
-                    break;
+                    throw new ArgumentException(
+                        $"Result callback type '{resultCallback.ResultType}' does not match the return type '{GetReturnType()}' of '{_method}'.",
+                        nameof(patchCallback));
+                }
+
+                var patch = new ModMethodPatch(this, mod, patchCallback, type, logger);
+
+                switch (type)
+                {
+                    case PatchType.Prefix:
+                        AddPrefix(patch);
+                        break;
+
+                    case PatchType.Postfix:
+                        AddPostfix(patch);
+                        break;
+
+                    default:
+                        throw new InvalidOperationException("Unknown type " + type);
+                }
+
+                return patch;
+            }
+
+            public void UnregisterPatch(ModMethodPatch patch)
+            {
+                switch (patch.PatchType)
+                {
+                    case PatchType.Prefix:
+                        RemovePrefix(patch);
+                        break;
+
+                    case PatchType.Postfix:
+                        RemovePostfix(patch);
+                        break;
+
+                    default:
+                        throw new InvalidOperationException("Unknown type " + patch.PatchType);
                 }
             }
 
-            return callNext;
-        }
 
-        private List<(RuntimeMod?, IPatchCallback)> GetActions(HarmonyPatchType type)
-        {
-            return type switch
+            public bool Invoke(HarmonyPatchType type, object[] args, object? instance, ref object? result)
             {
-                HarmonyPatchType.Prefix => PrefixActions,
-                HarmonyPatchType.Postfix => PostfixActions,
-                _ => throw new Exception("Harmony patch type not supported")
-            };
-        }
+                var callNext = true;
 
-        private void AddPrefix(RuntimeMod? mod, IPatchCallback callback)
-        {
-            if (PrefixActions.FindIndex((m) => m.mod == mod) > -1)
-                return;
+                foreach (var patch in GetActions(type).ToArray())
+                {
+                    if (patch.IsDisposed)
+                        continue;
 
-            var wasEmpty = PrefixActions.Count == 0;
+                    if (!patch.Invoke(args, instance, ref result))
+                    {
+                        callNext = false;
+                        break;
+                    }
+                }
 
-            PrefixActions.Add((mod, callback));
-
-            if (_prefixPatch is null)
-            {
-                var returnType = GetReturnType();
-                var prefix = returnType == typeof(void)
-                    ? PatchManager.PrefixEntryPointVoid
-                    : PatchManager.GetPrefixEntryPoint(returnType);
-                _harmony.Patch(_method, prefix: prefix);
-                _prefixPatch = prefix.method;
-            }
-        }
-
-        private void AddPostfix(RuntimeMod? mod, IPatchCallback callback)
-        {
-            if (PostfixActions.FindIndex((m) => m.mod == mod) > -1)
-                return;
-
-            var wasEmpty = PostfixActions.Count == 0;
-
-            PostfixActions.Add((mod, callback));
-
-            if (_postfixPatch is null)
-            {
-                var returnType = GetReturnType();
-                var postfix = returnType == typeof(void)
-                    ? PatchManager.PostfixEntryPointVoid
-                    : PatchManager.GetPostfixEntryPoint(returnType);
-                _harmony.Patch(_method, postfix: postfix);
-                _postfixPatch = postfix.method;
-            }
-        }
-
-        private Type GetReturnType()
-        {
-            return _method is MethodInfo methodInfo ? methodInfo.ReturnType : typeof(void);
-        }
-
-        private void RemovePrefix(RuntimeMod? mod)
-        {
-            PrefixActions.RemoveAt(PrefixActions.FindIndex((m) => m.mod == mod));
-
-            if (PrefixActions.Count == 0)
-            {
-                _harmony.Unpatch(_method, _prefixPatch);
-                _prefixPatch = null;
-            }
-        }
-
-        private void RemovePostfix(RuntimeMod? mod)
-        {
-            PostfixActions.RemoveAt(PostfixActions.FindIndex((m) => m.mod == mod));
-
-            if (PostfixActions.Count == 0)
-            {
-                _harmony.Unpatch(_method, _postfixPatch);
-                _postfixPatch = null;
-            }
-        }
-
-        public void Dispose()
-        {
-            if (PrefixActions.Count > 0)
-            {
-                _harmony.Unpatch(_method, _prefixPatch);
-                PrefixActions.Clear();
+                return callNext;
             }
 
-            if (PostfixActions.Count > 0)
+            private List<ModMethodPatch> GetActions(HarmonyPatchType type)
             {
-                _harmony.Unpatch(_method, _postfixPatch);
-                PostfixActions.Clear();
+                return type switch
+                {
+                    HarmonyPatchType.Prefix => PrefixActions,
+                    HarmonyPatchType.Postfix => PostfixActions,
+                    _ => throw new Exception("Harmony patch type not supported")
+                };
             }
 
+            private void AddPrefix(ModMethodPatch patch)
+            {
+                PrefixActions.Add(patch);
+
+                if (_prefixPatch is null)
+                {
+                    var returnType = GetReturnType();
+                    var prefix = returnType == typeof(void)
+                        ? PrefixEntryPointVoid
+                        : GetPrefixEntryPoint(returnType);
+                    _harmony.Patch(_method, prefix: prefix);
+                    _prefixPatch = prefix.method;
+                }
+            }
+
+            private void AddPostfix(ModMethodPatch patch)
+            {
+                PostfixActions.Add(patch);
+
+                if (_postfixPatch is null)
+                {
+                    var returnType = GetReturnType();
+                    var postfix = returnType == typeof(void)
+                        ? PatchManager.PostfixEntryPointVoid
+                        : PatchManager.GetPostfixEntryPoint(returnType);
+                    _harmony.Patch(_method, postfix: postfix);
+                    _postfixPatch = postfix.method;
+                }
+            }
+
+            private Type GetReturnType()
+            {
+                return _method is MethodInfo methodInfo ? methodInfo.ReturnType : typeof(void);
+            }
+
+            private void RemovePrefix(ModMethodPatch patch)
+            {
+                PrefixActions.Remove(patch);
+
+                if (PrefixActions.Count == 0)
+                {
+                    _harmony.Unpatch(_method, _prefixPatch);
+                    _prefixPatch = null;
+                }
+            }
+
+            private void RemovePostfix(ModMethodPatch patch)
+            {
+                PostfixActions.Remove(patch);
+
+                if (PostfixActions.Count == 0)
+                {
+                    _harmony.Unpatch(_method, _postfixPatch);
+                    _postfixPatch = null;
+                }
+            }
+
+            public void Dispose()
+            {
+                if (PrefixActions.Count > 0)
+                {
+                    _harmony.Unpatch(_method, _prefixPatch);
+                    PrefixActions.Clear();
+                }
+
+                if (PostfixActions.Count > 0)
+                {
+                    _harmony.Unpatch(_method, _postfixPatch);
+                    PostfixActions.Clear();
+                }
+            }
+
+            public List<ModMethodPatch> PrefixActions { get; } = [];
+            public List<ModMethodPatch> PostfixActions { get; } = [];
         }
 
-        public List<(RuntimeMod? mod, IPatchCallback callback)> PrefixActions { get; } = [];
-        public List<(RuntimeMod? mod, IPatchCallback callback)> PostfixActions { get; } = [];
+        private class ModMethodPatch : IDisposable
+        {
+            public PatchType PatchType => _patchType;
+
+            private readonly MethodPatch _patch;
+            private readonly RuntimeMod? _mod;
+            private readonly IPatchCallback _callback;
+            private readonly PatchType _patchType;
+            private readonly ILogger _logger;
+            private int _disposed;
+
+            public bool IsDisposed => Volatile.Read(ref _disposed) != 0;
+
+            public ModMethodPatch(MethodPatch methodPatch, RuntimeMod? mod, IPatchCallback callback, PatchType patchType, ILogger logger)
+            {
+                _patch = methodPatch;
+                _mod = mod;
+                _callback = callback;
+                _patchType = patchType;
+                _logger = logger;
+            }
+
+            public bool Invoke(object[] args, object? instance, ref object? result)
+            {
+                if (IsDisposed)
+                    return true;
+
+                try
+                {
+                    return _callback.Invoke(args, instance, ref result);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Warning($"Mod '{_mod?.ModId ?? "StarMap"}' could not handle '{_patchType}' for method '{_patch.Method}' \n {ex.Message}");
+                    return true;
+                }
+            }
+
+            public void Dispose()
+            {
+                if (Interlocked.Exchange(ref _disposed, 1) != 0)
+                    return;
+
+                _patch.UnregisterPatch(this);
+            }
+        }
     }
 }

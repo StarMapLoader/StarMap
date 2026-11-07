@@ -12,7 +12,7 @@ using Tomlet;
 
 namespace StarMap.Core.ModRepository
 {
-    internal class RuntimeMod
+    internal class RuntimeMod : IDisposable
     {
         private static readonly string _rootContentPath = Path.Combine(["Content"]);
 
@@ -26,8 +26,9 @@ namespace StarMap.Core.ModRepository
         public object? ModInstance { get; set; } = null;
 
         public HashSet<string> ExportedAssemblies { get; set; } = [];
-        public Dictionary<RuntimeMod, HashSet<string>> Dependencies { get; set; } = [];
-        public Dictionary<string, StarMapModDependency> NotLoadedModDependencies { get; set; } = [];
+        public Dictionary<RuntimeMod, HashSet<string>> Dependencies { get; } = [];
+        public Dictionary<string, StarMapModDependency> NotLoadedModDependencies { get; } = [];
+        public HashSet<IDisposable> Patches { get; } = [];
 
         public MethodInfo? BeforeMainAction { get; set; } = null;
         public MethodInfo? PrepareSystemsAction { get; set; } = null;
@@ -158,16 +159,17 @@ namespace StarMap.Core.ModRepository
                             modRegistry.AddModMethod(ModId, attr, modObject, classMethod);
                             break;
                         case StarMapAllModsLoadedAttribute:
-                            patchManager.RegisterStaticVoidPatch(IPatchService.PatchType.Postfix, this, typeof(KSA.ModLibrary).GetMethod(nameof(ModLibrary.LoadAll))!,
+                            var allModsLoadedPatch = patchManager.RegisterStaticVoidPatch(IPatchService.PatchType.Postfix, this, typeof(KSA.ModLibrary).GetMethod(nameof(ModLibrary.LoadAll))!,
                                 args =>
                                 {
                                     classMethod.Invoke(modObject, args);
                                     return true;
                                 });
+                            Patches.Add(allModsLoadedPatch);
                             break;
 
                         case StarMapImmediateLoadAttribute:
-                            patchManager.RegisterInstanceVoidPatch<Mod>(IPatchService.PatchType.Prefix, this, typeof(KSA.Mod).GetMethod(nameof(Mod.PrepareSystems))!,
+                            var immediateLoadPatch = patchManager.RegisterInstanceVoidPatch<Mod>(IPatchService.PatchType.Prefix, this, typeof(KSA.Mod).GetMethod(nameof(Mod.PrepareSystems))!,
                                 (args, mod) =>
                                 {
                                     if (mod.Id.Equals(ModId))
@@ -175,33 +177,37 @@ namespace StarMap.Core.ModRepository
 
                                     return true;
                                 });
+                            Patches.Add(immediateLoadPatch);
                             break;
                         case StarMapAfterOnFrameAttribute:
-                            patchManager.RegisterInstanceVoidPatch<Program>(IPatchService.PatchType.Postfix, this, typeof(Program).GetMethod("OnFrame")!,
+                            var afterOnFramepatch = patchManager.RegisterInstanceVoidPatch<Program>(IPatchService.PatchType.Postfix, this, typeof(Program).GetMethod("OnFrame")!,
                                 (args, mod) =>
                                 {
                                     classMethod.Invoke(modObject, [args[0], args[1]]);
 
                                     return true;
                                 });
+                            Patches.Add(afterOnFramepatch);
                             break;
                         case StarMapBeforeGuiAttribute:
-                            patchManager.RegisterInstanceVoidPatch<Program>(IPatchService.PatchType.Prefix, this, typeof(Program).GetMethod("OnDrawUiFrame", BindingFlags.NonPublic | BindingFlags.Instance)!,
+                            var beforeGuiPatch = patchManager.RegisterInstanceVoidPatch<Program>(IPatchService.PatchType.Prefix, this, typeof(Program).GetMethod("OnDrawUiFrame", BindingFlags.NonPublic | BindingFlags.Instance)!,
                                 (args, mod) =>
                                 {
                                     classMethod.Invoke(modObject, [args[0]]);
 
                                     return true;
                                 });
+                            Patches.Add(beforeGuiPatch);
                             break;
                         case StarMapAfterGuiAttribute:
-                            patchManager.RegisterInstanceVoidPatch<Program>(IPatchService.PatchType.Postfix, this, typeof(Program).GetMethod("OnDrawUiViewports", BindingFlags.NonPublic | BindingFlags.Instance)!,
+                            var afterGuiPatch = patchManager.RegisterInstanceVoidPatch<Program>(IPatchService.PatchType.Postfix, this, typeof(Program).GetMethod("OnDrawUiViewports", BindingFlags.NonPublic | BindingFlags.Instance)!,
                                 (args, mod) =>
                                 {
                                     classMethod.Invoke(modObject, [args[0]]);
 
                                     return true;
                                 });
+                            Patches.Add(afterGuiPatch);
                             break;
                     }
                 }
@@ -223,7 +229,7 @@ namespace StarMap.Core.ModRepository
                 foreach (var modDependent in modDependents)
                 {
                     var dependencyInfo = modDependent.NotLoadedModDependencies[ModId];
-                    modDependent.Dependencies.Add(this, [.. dependencyInfo.ImportedAssemblies]);
+                    modDependent.Dependencies.Add(this, [.. CalculateUseableAssemblies(this, dependencyInfo)]);
                     if (modDependent.NotLoadedModDependencies.Remove(ModId) && modDependent.NotLoadedModDependencies.Count == 0)
                     {
                         modRegistry.WaitingMods.Remove(modDependent);
@@ -233,6 +239,16 @@ namespace StarMap.Core.ModRepository
                 modRegistry.WaitingModsDependencyGraph.Remove(ModId);
             }
             return loadableMods;
+        }
+
+        public void Dispose()
+        {
+            foreach (var patch in Patches.ToArray())
+            {
+                patch.Dispose();
+            }
+
+            Patches.Clear();
         }
     }
 }

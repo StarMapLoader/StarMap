@@ -6,7 +6,7 @@ using System.Collections.Concurrent;
 
 namespace StarMap.Core.UI
 {
-    internal interface IModMenu
+    internal interface IModMenu : IDisposable
     {
         IDisposable AddModMenuButton(string label, Action action);
     }
@@ -19,15 +19,13 @@ namespace StarMap.Core.UI
             REMOVE,
         }
 
-        private readonly IPatchManager _patchManager;
         private readonly ConcurrentDictionary<string, ModMenuButton> _buttons = [];
         private readonly string _title;
+        private readonly IDisposable _patch;
 
         public ModMenu(IPatchManager patchManager)
         {
-            _patchManager = patchManager;
-
-            _patchManager.RegisterInstanceVoidPatch<Program>(
+            _patch = patchManager.RegisterInstanceVoidPatch<Program>(
                 IPatchService.PatchType.Prefix,
                 null,
                 typeof(Program).GetMethod("DrawProgramMenusHook")!,
@@ -68,6 +66,11 @@ namespace StarMap.Core.UI
         public void RemoveModMenuButton(string label)
         {
             _buttons.TryRemove(label, out _);
+        }
+
+        public void Dispose()
+        {
+            _patch.Dispose();
         }
     }
 
