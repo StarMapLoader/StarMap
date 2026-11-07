@@ -21,9 +21,7 @@ jobs:
         runs-on: ubuntu-latest
         outputs:
             new_version: ${{ steps.version.outputs.new_version }}
-            prev_version: ${{ steps.version.outputs.prev_version }}
             release_tag: ${{ steps.version.outputs.release_tag }}
-            api_changed: ${{ steps.api_check.outputs.api_changed }}
         steps:
             - uses: actions/checkout@v4
               with:
@@ -44,20 +42,10 @@ jobs:
                     exit 1
                   fi
 
-                  previous_tag=""
-                  if git rev-parse --verify "${GITHUB_SHA}^" >/dev/null 2>&1; then
-                    previous_tag=$(git tag --merged "${GITHUB_SHA}^" --format='%(refname:short)' \
-                      | awk '/^[0-9]+\.[0-9]+\.[0-9]+$/ { print }' \
-                      | sort -V \
-                      | tail -n 1)
-                  fi
-
                   echo "Release version: $RELEASE_TAG"
-                  echo "Previous release tag: ${previous_tag:-none}"
                   {
                     echo "release_tag=$RELEASE_TAG"
                     echo "new_version=$RELEASE_TAG"
-                    echo "prev_version=$previous_tag"
                   } >> "$GITHUB_OUTPUT"
 
             - name: Setup NuGet source
@@ -89,40 +77,9 @@ jobs:
                       version.txt
                   retention-days: 1
 
-            - name: Check whether StarMap.API changed since previous tag
-              id: api_check
-              run: |
-                  current_commit="${GITHUB_SHA}"
-                  prev="${{  steps.version.outputs.prev_version }}"
-
-                  echo "previous_tag=$prev" >> $GITHUB_OUTPUT
-
-                  if [ -z "$prev" ]; then
-                      echo "api_changed=true" >> $GITHUB_OUTPUT
-                      exit 0
-                  fi
-
-                  echo "Previous tag: $prev"
-                  echo "Current commit: $current_commit"
-
-                  diff=$(git diff --name-only "$prev" "$current_commit")
-
-                  {
-                      echo "diff_files<<EOF"
-                      echo "$diff"
-                      echo "EOF"
-                  } >> "$GITHUB_OUTPUT"
-
-                  if echo "$diff" | grep -qE '^StarMap.API/|^StarMap.API.csproj'; then
-                      echo "api_changed=true" >> $GITHUB_OUTPUT
-                  else
-                      echo "api_changed=false" >> $GITHUB_OUTPUT
-                  fi
-
     publish-nuget:
         runs-on: ubuntu-latest
         needs: build
-        if: needs.build.outputs.api_changed == true
         steps:
             - uses: actions/checkout@v4
               with:
@@ -132,12 +89,6 @@ jobs:
               with:
                   dotnet-version: ${{ env.DOTNET_VERSION }}
 
-            - name: Download build artifacts
-              uses: actions/download-artifact@v4
-              with:
-                  name: publish
-                  path: ./build_artifacts
-
             - name: Setup NuGet source
               run: |
                   dotnet nuget add source \
@@ -146,7 +97,7 @@ jobs:
                     --store-password-in-clear-text \
                     --name StarMapGitHubNugetSource "${{ env.NUGET_SOURCE }}"
 
-            - name: Pack and push StarMap.API (if changed)
+            - name: Pack and push StarMap.API
               run: |
                   dotnet restore StarMap.API/StarMap.API.csproj
                   dotnet pack StarMap.API/StarMap.API.csproj \
