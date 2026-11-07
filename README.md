@@ -2,17 +2,13 @@
 
 [简体中文](README.zh-CN.md)
 
-A POC/Prototype arbitrary code modloader for Kitten Space Agency.  
-Currently this loader can be ran with this functionality in the background, or as a dumb loader just loading mods.  
-It makes use of Assembly Load Contexts to ensure mod dependencies are managed seperatly, reducing conflicts
+An arbitrary code mod loader for Kitten Space Agency.
 
 ## Documentation
 
 The [StarMap documentation](https://starmaploader.github.io/StarMap/) covers installation, usage, and mod development. Its Markdown source is in [`docs`](docs/).
 
 ## Releases
-
-To publish a release, create and push a semantic-version tag such as `1.2.3` on the commit to release. The release workflow builds the release and installer from that commit; tags can point to commits on any branch.
 
 The documentation site tracks the current release; older releases do not have separate documentation snapshots. The current release-candidate documentation is available at [the RC docs site](https://starmaploader.github.io/StarMap/rc/).
 
@@ -42,8 +38,6 @@ For more information on mod creation, check out the example mods: [StarMap-Examp
 ## Future plans
 
 The goal is to create a modloader similar to the mod functionality in Factorio, where users can select mods in game taken from a remote repository, and that those mods than get installed after an automatic restart of the game  
-It currently does this by using two processes to host the game itself seperately so it can restart  
-The idea would be to have the repository just be an index of mods, versions and download locations, and that the download locations themselves are seperate (for example github releases)
 
 ## Credits
 
