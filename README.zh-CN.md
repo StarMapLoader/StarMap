@@ -14,13 +14,12 @@
 
 ## 安装
 
--   从 [Releases](https://github.com/StarMapLoader/StarMap/releases/latest) 下载并解压发布包。
--   如果尚未安装，请先安装 Windows x64 版 [.NET 10 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)。
--   首次运行 `StarMap.exe` 时，程序会启动失败并生成 `StarMapConfig.json`。
--   打开 `StarMapConfig.json`，设置 KSA 的安装位置。
-    -   `GameLocation` 应直接指向 Kitten Space Agency 的安装目录（例如 `C:\\games\\Kitten Space Agency\\`）。
-    -   `RepositoryLocation` 可以留空。
--   再次运行 `StarMap.exe`，此时应能启动 KSA 并加载模组。
+- 从 [Releases](https://github.com/StarMapLoader/StarMap/releases/latest) 下载 ZIP 或 Windows 安装程序。
+- 如果尚未安装，请先安装 Windows x64 版 [.NET 10 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)。
+- 使用安装程序时，请选择包含 `KSA.dll` 的 KSA 目录；安装程序会创建 `StarMapConfig.json`。使用 ZIP 时，先解压并运行一次 `StarMap.exe` 以生成配置，然后将 `GameLocation` 设置为 KSA 目录或 `KSA.dll` 的路径。`RepositoryLocation` 可以留空。
+- 将配置文件保留在 `StarMap.exe` 旁边，并从 StarMap 安装目录启动程序，以加载已启用的模组并启动 KSA。
+
+详细步骤请参阅[安装指南](https://starmaploader.github.io/StarMap/installation/)。
 
 ## 模组位置
 
@@ -37,9 +36,7 @@ StarMap 使用游戏的清单（manifest）系统，从这两个位置发现模�
 
 ## 未来计划
 
-目标是开发一个模组加载器，提供类似《异星工厂》（Factorio）的模组功能：玩家可在游戏内从远程仓库选择模组，游戏自动重启后再安装。
-目前，加载器通过两个进程分别托管游戏，以支持重启。
-设想中，仓库只索引模组、版本和下载地址；模组下载可托管在其他位置，例如 GitHub Releases。
+长远目标是在游戏内提供模组管理器，让玩家从远程目录选择模组，并在重启后安装。目前 StarMap 只加载本地模组。计划中的目录只索引模组 ID、版本和下载地址；模组文件可托管在其他位置，例如 GitHub Releases。
 
 ## 致谢
 

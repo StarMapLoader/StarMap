@@ -25,6 +25,6 @@ StarMap creates one instance of the marked entry class for the mod. Keep one `[S
 
 ## Build target
 
-StarMap and `StarMap.API` target .NET 10. Build mods as .NET 10 class libraries for x64, and use the `StarMap.API` NuGet package compatible with the loader version you intend to support.
+StarMap and `StarMap.API` target .NET 10. Build mods as .NET 10 class libraries; Use the `StarMap.API` NuGet package compatible with the loader version you intend to support.
 
 For additional working examples, see the [StarMap-ExampleMods repository](https://github.com/StarMapLoader/StarMap-ExampleMods). The versioned API documentation here describes the attribute-based entry points used by current StarMap releases.

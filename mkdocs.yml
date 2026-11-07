@@ -23,6 +23,7 @@ markdown_extensions:
 
 nav:
   - Home: index.md
+  - Changelog: changelog.md
   - Installation: installation.md
   - Using StarMap: using-starmap.md
   - Modding:

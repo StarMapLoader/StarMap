@@ -14,13 +14,12 @@ The documentation site tracks the current release; older releases do not have se
 
 ## Installation
 
--   Download and unzip release from [Releases](https://github.com/StarMapLoader/StarMap/releases/latest).
--   Install the [.NET 10 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) for Windows x64 if it is not already installed.
--   Run StarMap.exe, this will fail and create a StarMapConfig.json.
--   Open StarMapConfig.json and set the location of your KSA installation.
-    -   `GameLocation` should be set to the location where Kitten Space Agency was installed, pointing directly to that folder (e.g. `C:\\games\\Kitten Space Agency\\`)
-    -   `RepositoryLocation` can be kept empty
--   Run StarMap.exe again, this should launch KSA and load your mods.
+- Download the ZIP or Windows installer from [Releases](https://github.com/StarMapLoader/StarMap/releases/latest).
+- Install the [.NET 10 Runtime for Windows x64](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) if it is not already installed.
+- With the installer, select the KSA folder containing `KSA.dll`; it creates `StarMapConfig.json` for you. With the ZIP, extract it, run `StarMap.exe` once to create the config, then set `GameLocation` to the KSA folder or `KSA.dll` path. `RepositoryLocation` can stay empty.
+- Keep the config beside `StarMap.exe` and launch StarMap from its installation folder to start KSA with enabled mods.
+
+See the full [installation guide](https://starmaploader.github.io/StarMap/installation/) for details.
 
 ## Mod location
 
@@ -37,7 +36,7 @@ For more information on mod creation, check out the example mods: [StarMap-Examp
 
 ## Future plans
 
-The goal is to create a modloader similar to the mod functionality in Factorio, where users can select mods in game taken from a remote repository, and that those mods than get installed after an automatic restart of the game  
+The long-term goal is an in-game mod manager that can select mods from a remote catalog and install them after a restart. StarMap currently loads local mods only. The planned catalog would index mod IDs, versions, and download URLs; mod files could be hosted elsewhere, such as GitHub Releases.
 
 ## Credits
 
