@@ -2,6 +2,8 @@
 
 `IPatchService` registers prefix or postfix callbacks against a `MethodBase`. It supports static and instance methods, with or without return values. Callbacks receive the target method's arguments; instance callbacks also receive the target object, and callbacks for methods with return values can read or change the result by reference.
 
+The patch registration methods are currently marked experimental in `StarMap.API`; C# projects will receive the `PatchHelperExperimental` diagnostic when they use them.
+
 ## Choose a callback type
 
 | Target method | Registration method | Callback parameters |

@@ -17,10 +17,10 @@ See [Create your first mod](modding/first-mod.md) for the required files and [Mo
 
 By default, KSA uses its usual documents location for local mods. StarMap also supports an instance path override if you keep that data elsewhere:
 
-- Pass `-InstancePath <path>` as a game argument, or
-- Set the `STARMAP_INSTANCE_PATH` environment variable.
+- Launch `StarMap.exe` with `-InstancePath <path>`, or
+- Set the `STARMAP_INSTANCE_PATH` environment variable before launching StarMap.
 
-For example, the `GameArguments` setting can include `["-InstancePath", "D:\\KSAProfiles\\Test"]`.
+For example, run `StarMap.exe -InstancePath "D:\KSAProfiles\Test"`. If both options are set, the command-line value takes precedence.
 
 ## Troubleshooting
 

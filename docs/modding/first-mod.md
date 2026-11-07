@@ -12,12 +12,11 @@ cd HelloStarMap
 dotnet add package StarMap.API
 ```
 
-Use the StarMap.API package version compatible with the loader you are targeting. It may have a different version number from the StarMap application. Add `<PlatformTarget>x64</PlatformTarget>` to the project's main `<PropertyGroup>`:
+Use the StarMap.API package version compatible with the loader you are targeting. It may have a different version number from the StarMap application.
 
 ```xml
 <PropertyGroup>
   <TargetFramework>net10.0</TargetFramework>
-  <PlatformTarget>x64</PlatformTarget>
   <ImplicitUsings>enable</ImplicitUsings>
   <Nullable>enable</Nullable>
 </PropertyGroup>
