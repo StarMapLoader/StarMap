@@ -9,8 +9,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Ahwoo.BRUTAL.Monitor.Common" />
-		<PackageReference Include="Ahwoo.BRUTAL.Monitor.Host" />
 		<PackageReference Include="Lib.Harmony" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" />
 		<PackageReference Include="Samboy063.Tomlet">
@@ -71,6 +69,12 @@
 			<ExcludeAssets>runtime;native</ExcludeAssets>
 		</PackageReference>
 		<PackageReference Include="Ahwoo.BRUTAL.Vulkan.Abstractions">
+			<ExcludeAssets>runtime;native</ExcludeAssets>
+		</PackageReference>
+		<PackageReference Include="Ahwoo.BRUTAL.Monitor.Common">
+			<ExcludeAssets>runtime;native</ExcludeAssets>
+		</PackageReference>
+		<PackageReference Include="Ahwoo.BRUTAL.Monitor.Host">
 			<ExcludeAssets>runtime;native</ExcludeAssets>
 		</PackageReference>
 	</ItemGroup>
