@@ -180,7 +180,7 @@ namespace StarMap.Core.ModRepository
                             Patches.Add(immediateLoadPatch);
                             break;
                         case StarMapAfterOnFrameAttribute:
-                            var afterOnFramepatch = patchManager.RegisterInstanceVoidPatch<Program>(IPatchService.PatchType.Postfix, this, typeof(Program).GetMethod("OnFrame")!,
+                            var afterOnFramepatch = patchManager.RegisterInstanceVoidPatch<Program>(IPatchService.PatchType.Postfix, this, typeof(Program).GetMethod("OnFrame", BindingFlags.NonPublic | BindingFlags.Instance)!,
                                 (args, mod) =>
                                 {
                                     classMethod.Invoke(modObject, [args[0], args[1]]);
