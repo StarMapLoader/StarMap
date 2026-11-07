@@ -7,7 +7,7 @@ using System.Diagnostics;
 
 namespace StarMap.Core.Patches
 {
-    internal interface IStarMapPatches
+    internal interface IStarMapPatches : IDisposable
     {
         void Init();
     }
@@ -16,6 +16,7 @@ namespace StarMap.Core.Patches
     {
         private readonly IPatchManager _patchManager;
         private readonly ILogger _logger;
+        private readonly HashSet<IDisposable> _patches = [];
 
         public StarMapPatches(IPatchManager patchManager, ILogger logger)
         {
@@ -23,12 +24,21 @@ namespace StarMap.Core.Patches
             _logger = logger;
         }
 
+        public void Dispose()
+        {
+            foreach (var patch in _patches)
+            {
+                patch.Dispose();
+            }
+            _patches.Clear();
+        }
+
         public void Init()
         {
-            _patchManager.RegisterStaticVoidPatch(IPatchService.PatchType.Prefix, null, typeof(ModLibrary).GetMethod(nameof(ModLibrary.PrepareAll))!, BeforePrepareAll);
+            _patches.Add(_patchManager.RegisterStaticVoidPatch(IPatchService.PatchType.Prefix, null, typeof(ModLibrary).GetMethod(nameof(ModLibrary.PrepareAll))!, BeforePrepareAll));
 
             if (DocumentsPathOverride.ShouldApplyOverride())
-                _patchManager.RegisterStaticPatch<string>(IPatchService.PatchType.Prefix, null, AccessTools.PropertyGetter(typeof(Constants), nameof(Constants.DocumentsFolderPath)), DocumentsPathOverride.BeforeDocumentsFolderPath);
+                _patches.Add(_patchManager.RegisterStaticPatch<string>(IPatchService.PatchType.Prefix, null, AccessTools.PropertyGetter(typeof(Constants), nameof(Constants.DocumentsFolderPath)), DocumentsPathOverride.BeforeDocumentsFolderPath));
         }
 
         private bool BeforePrepareAll(object[] _)
