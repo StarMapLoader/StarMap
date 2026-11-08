@@ -1,5 +1,4 @@
-﻿using Brutal.Collections;
-using Brutal.GlfwApi;
+﻿using Brutal.GlfwApi;
 using Brutal.ImGuiApi;
 using Brutal.VulkanApi;
 using Brutal.VulkanApi.Abstractions;

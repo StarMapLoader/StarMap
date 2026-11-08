@@ -160,9 +160,8 @@ namespace StarMap.Core.ModRepository
                             break;
                         case StarMapAllModsLoadedAttribute:
                             var allModsLoadedPatch = patchManager.RegisterStaticVoidPatch(IPatchService.PatchType.Postfix, this, typeof(KSA.ModLibrary).GetMethod(nameof(ModLibrary.LoadAll)),
-                                args =>
+                                _ =>
                                 {
-                                    // The callback takes no parameters, whatever LoadAll takes.
                                     classMethod.Invoke(modObject, []);
                                     return true;
                                 });
