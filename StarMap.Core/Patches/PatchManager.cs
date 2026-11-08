@@ -132,9 +132,9 @@ namespace StarMap.Core.Patches
             MethodBase __originalMethod,
             object[] __args,
             object? __instance,
-            ref T __result)
+            ref object? __result)
         {
-            object? result = __result;
+            var result = __result;
             var outcome = _instance?.PatchEntryPoint(HarmonyPatchType.Prefix, __originalMethod, __args, __instance, ref result) ?? true;
             __result = IPatchCallback.CastValue<T>(result, nameof(__result));
             return outcome;
@@ -154,9 +154,9 @@ namespace StarMap.Core.Patches
             MethodBase __originalMethod,
             object[] __args,
             object? __instance,
-            ref T __result)
+            ref object? __result)
         {
-            object? result = __result;
+            var result = __result;
             _instance?.PatchEntryPoint(HarmonyPatchType.Postfix, __originalMethod, __args, __instance, ref result);
             __result = IPatchCallback.CastValue<T>(result, nameof(__result));
         }
@@ -454,7 +454,12 @@ namespace StarMap.Core.Patches
                 if (Interlocked.Exchange(ref _disposed, 1) != 0)
                     return;
 
-                _patch.UnregisterPatch(this);
+                try
+                {
+                    _patch.UnregisterPatch(this);
+                }
+                catch { }
+
             }
         }
     }
