@@ -7,7 +7,7 @@ Mark the entry class with `[StarMapMod]`. StarMap creates one instance for the m
 | Attribute | Required method signature | Called |
 | --- | --- | --- |
 | `[StarMapBeforeMain]` | `void Method()` | After the mod is initialized and before KSA starts. |
-| `[StarMapImmediateLoad]` | `void Method(KSA.Mod definingMod)` | Immediately before KSA prepares that mod's systems. |
+| `[StarMapImmediateLoad]` | `void Method(KSA.Mod definingMod)` | When KSA registers that mod, before its settings and any content load. |
 | `[StarMapAllModsLoaded]` | `void Method()` | After KSA's `ModLibrary.LoadAll` completes. |
 | `[StarMapUnload]` | `void Method()` | When KSA unloads. Dispose mod-owned subscriptions and menu items here. |
 | `[StarMapBeforeGui]` | `void Method(double dt)` | Before KSA's GUI frame callback. |

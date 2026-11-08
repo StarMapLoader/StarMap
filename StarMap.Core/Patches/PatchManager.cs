@@ -9,10 +9,10 @@ namespace StarMap.Core.Patches
 {
     internal interface IPatchManager : IDisposable
     {
-        IDisposable RegisterInstancePatch<T, U>(PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.InstanceCallback<T, U> callback);
-        IDisposable RegisterInstanceVoidPatch<T>(PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.InstanceVoidCallback<T> callback);
-        IDisposable RegisterStaticPatch<U>(PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.StaticCallback<U> callback);
-        IDisposable RegisterStaticVoidPatch(PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.StaticVoidCallback callback);
+        IDisposable RegisterInstancePatch<T, U>(PatchType patchType, RuntimeMod? mod, MethodBase? method, IPatchService.InstanceCallback<T, U> callback);
+        IDisposable RegisterInstanceVoidPatch<T>(PatchType patchType, RuntimeMod? mod, MethodBase? method, IPatchService.InstanceVoidCallback<T> callback);
+        IDisposable RegisterStaticPatch<U>(PatchType patchType, RuntimeMod? mod, MethodBase? method, IPatchService.StaticCallback<U> callback);
+        IDisposable RegisterStaticVoidPatch(PatchType patchType, RuntimeMod? mod, MethodBase? method, IPatchService.StaticVoidCallback callback);
     }
 
     internal class PatchManager : IPatchManager
@@ -34,24 +34,41 @@ namespace StarMap.Core.Patches
             _instance = this;
         }
 
-        public IDisposable RegisterInstancePatch<T, U>(PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.InstanceCallback<T, U> callback)
+        public IDisposable RegisterInstancePatch<T, U>(PatchType patchType, RuntimeMod? mod, MethodBase? method, IPatchService.InstanceCallback<T, U> callback)
         {
+            if (method is null) return MissingTarget(mod);
             return GetOrCreateMethodPatch(method).RegisterPatch(patchType, mod, new InstanceCallback<T, U>(callback), _logger);
         }
-        public IDisposable RegisterInstanceVoidPatch<T>(PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.InstanceVoidCallback<T> callback)
+        public IDisposable RegisterInstanceVoidPatch<T>(PatchType patchType, RuntimeMod? mod, MethodBase? method, IPatchService.InstanceVoidCallback<T> callback)
         {
+            if (method is null) return MissingTarget(mod);
             return GetOrCreateMethodPatch(method).RegisterPatch(patchType, mod, new InstanceVoidCallback<T>(callback), _logger);
         }
 
-        public IDisposable RegisterStaticPatch<U>(PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.StaticCallback<U> callback)
+        public IDisposable RegisterStaticPatch<U>(PatchType patchType, RuntimeMod? mod, MethodBase? method, IPatchService.StaticCallback<U> callback)
         {
+            if (method is null) return MissingTarget(mod);
             return GetOrCreateMethodPatch(method).RegisterPatch(patchType, mod, new StaticCallback<U>(callback), _logger);
         }
-        public IDisposable RegisterStaticVoidPatch(PatchType patchType, RuntimeMod? mod, MethodBase method, IPatchService.StaticVoidCallback callback)
+        public IDisposable RegisterStaticVoidPatch(PatchType patchType, RuntimeMod? mod, MethodBase? method, IPatchService.StaticVoidCallback callback)
         {
+            if (method is null) return MissingTarget(mod);
             return GetOrCreateMethodPatch(method).RegisterPatch(patchType, mod, new StaticVoidCallback(callback), _logger);
         }
 
+
+        // A KSA update can remove a method StarMap hooks. Skipping the one callback keeps the loader
+        // and every other mod running.
+        private IDisposable MissingTarget(RuntimeMod? mod)
+        {
+            _logger.Warning($"StarMap - A hook target is missing from this KSA build; a callback of {mod?.ModId ?? "StarMap"} will not run");
+            return new NoPatch();
+        }
+
+        private sealed class NoPatch : IDisposable
+        {
+            public void Dispose() { }
+        }
 
         private MethodPatch GetOrCreateMethodPatch(MethodBase method)
         {
