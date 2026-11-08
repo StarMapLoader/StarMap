@@ -159,17 +159,18 @@ namespace StarMap.Core.ModRepository
                             modRegistry.AddModMethod(ModId, attr, modObject, classMethod);
                             break;
                         case StarMapAllModsLoadedAttribute:
-                            var allModsLoadedPatch = patchManager.RegisterStaticVoidPatch(IPatchService.PatchType.Postfix, this, typeof(KSA.ModLibrary).GetMethod(nameof(ModLibrary.LoadAll))!,
+                            var allModsLoadedPatch = patchManager.RegisterStaticVoidPatch(IPatchService.PatchType.Postfix, this, typeof(KSA.ModLibrary).GetMethod(nameof(ModLibrary.LoadAll)),
                                 args =>
                                 {
-                                    classMethod.Invoke(modObject, args);
+                                    // The callback takes no parameters, whatever LoadAll takes.
+                                    classMethod.Invoke(modObject, []);
                                     return true;
                                 });
                             Patches.Add(allModsLoadedPatch);
                             break;
 
                         case StarMapImmediateLoadAttribute:
-                            var immediateLoadPatch = patchManager.RegisterInstanceVoidPatch<Mod>(IPatchService.PatchType.Prefix, this, typeof(KSA.Mod).GetMethod(nameof(Mod.PrepareSystems))!,
+                            var immediateLoadPatch = patchManager.RegisterInstanceVoidPatch<Mod>(IPatchService.PatchType.Prefix, this, typeof(KSA.Mod).GetMethod(nameof(Mod.LoadSettings)),
                                 (args, mod) =>
                                 {
                                     if (mod.Id.Equals(ModId))
