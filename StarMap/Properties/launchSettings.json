@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "StarMap": {
+      "commandName": "Project",
+      "commandLineArgs": "-InstancePath \"C:\\Users\\klaas\\AppData\\Local\\Borea\\Instances\\6cc3f568-20c3-4592-9df6-faaf6448ea8e\""
+    }
+  }
+}
