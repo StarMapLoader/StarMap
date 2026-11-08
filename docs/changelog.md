@@ -1,6 +1,16 @@
 # Changelog
 
-## 0.5
+## 0.5.3
+
+- Ensure StarMap is compatible with KSA 2025.11.10.5801
+
+## 0.5.1 and 0.5.2
+
+### Fixed
+
+- Ensure API nuget is released correctly
+
+## 0.5.0
 
 ### Added
 

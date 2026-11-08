@@ -19,7 +19,7 @@
     <PackageVersion Include="Lib.Harmony" Version="2.4.3" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.14" />
     <PackageVersion Include="Samboy063.Tomlet" Version="6.2.0" />
-    <PackageVersion Include="RocketWerkz.KSA" Version="2026.10.25.5707" />
-    <PackageVersion Include="RocketWerkz.KSA.Ref" Version="2026.10.25.5707" />
+    <PackageVersion Include="RocketWerkz.KSA" Version="2026.11.10.5801" />
+    <PackageVersion Include="RocketWerkz.KSA.Ref" Version="2026.11.10.5801" />
   </ItemGroup>
 </Project>
