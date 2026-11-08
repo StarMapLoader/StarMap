@@ -162,14 +162,22 @@ namespace StarMap.Core.ModRepository
                             var allModsLoadedPatch = patchManager.RegisterStaticVoidPatch(IPatchService.PatchType.Postfix, this, typeof(KSA.ModLibrary).GetMethod(nameof(ModLibrary.LoadAll))!,
                                 args =>
                                 {
-                                    classMethod.Invoke(modObject, args);
+                                    classMethod.Invoke(modObject, []);
                                     return true;
                                 });
                             Patches.Add(allModsLoadedPatch);
                             break;
 
                         case StarMapImmediateLoadAttribute:
-                            var immediateLoadPatch = patchManager.RegisterInstanceVoidPatch<Mod>(IPatchService.PatchType.Prefix, this, typeof(KSA.Mod).GetMethod(nameof(Mod.PrepareSystems))!,
+                            // KSA 2026.11.10.5801 removed Mod.PrepareSystems, and ModLibrary.PrepareAll now calls Mod.LoadSettings at its place.
+                            var immediateLoadTarget = typeof(KSA.Mod).GetMethod("PrepareSystems") ?? typeof(KSA.Mod).GetMethod(nameof(Mod.LoadSettings));
+                            if (immediateLoadTarget is null)
+                            {
+                                Console.WriteLine($"StarMap warning: 'StarMap - {ModId} uses StarMapImmediateLoad, but KSA has no method to hook it to'");
+                                break;
+                            }
+
+                            var immediateLoadPatch = patchManager.RegisterInstanceVoidPatch<Mod>(IPatchService.PatchType.Prefix, this, immediateLoadTarget,
                                 (args, mod) =>
                                 {
                                     if (mod.Id.Equals(ModId))
