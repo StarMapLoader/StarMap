@@ -19,7 +19,9 @@ namespace StarMap.Core.Patches
     {
         private static PatchManager? _instance;
         public static HarmonyMethod PrefixEntryPointVoid { get; } = new HarmonyMethod(typeof(PatchManager).GetMethod(nameof(PrefixPatchEntryPointVoid), BindingFlags.Static | BindingFlags.Public));
+        public static HarmonyMethod PrefixEntryPointResult { get; } = new HarmonyMethod(typeof(PatchManager).GetMethod(nameof(PrefixPatchEntryPoint), BindingFlags.Static | BindingFlags.Public));
         public static HarmonyMethod PostfixEntryPointVoid { get; } = new HarmonyMethod(typeof(PatchManager).GetMethod(nameof(PostfixPatchEntryPointVoid), BindingFlags.Static | BindingFlags.Public));
+        public static HarmonyMethod PostfixEntryPointResult { get; } = new HarmonyMethod(typeof(PatchManager).GetMethod(nameof(PostfixPatchEntryPoint), BindingFlags.Static | BindingFlags.Public));
 
         private readonly ILogger _logger;
         private readonly Harmony _harmony;
@@ -37,11 +39,13 @@ namespace StarMap.Core.Patches
         public IDisposable RegisterInstancePatch<T, U>(PatchType patchType, RuntimeMod? mod, MethodBase? method, IPatchService.InstanceCallback<T, U> callback)
         {
             if (method is null) return MissingTarget(mod);
+            ValidateInstanceTarget<T>(method);
             return GetOrCreateMethodPatch(method).RegisterPatch(patchType, mod, new InstanceCallback<T, U>(callback), _logger);
         }
         public IDisposable RegisterInstanceVoidPatch<T>(PatchType patchType, RuntimeMod? mod, MethodBase? method, IPatchService.InstanceVoidCallback<T> callback)
         {
             if (method is null) return MissingTarget(mod);
+            ValidateInstanceTarget<T>(method);
             return GetOrCreateMethodPatch(method).RegisterPatch(patchType, mod, new InstanceVoidCallback<T>(callback), _logger);
         }
 
@@ -65,6 +69,24 @@ namespace StarMap.Core.Patches
             return new NoPatch();
         }
 
+        private static void ValidateInstanceTarget<T>(MethodBase method)
+        {
+            var declaringType = method.DeclaringType;
+            if (method.IsStatic || method is ConstructorInfo || declaringType is null)
+            {
+                throw new ArgumentException(
+                    $"An instance callback requires an instance method with a declaring type; '{method}' is not a supported instance target.",
+                    nameof(method));
+            }
+
+            if (!typeof(T).IsAssignableFrom(declaringType))
+            {
+                throw new ArgumentException(
+                    $"Instance callback type '{typeof(T)}' cannot receive instances of target type '{declaringType}' for '{method}'.",
+                    nameof(method));
+            }
+        }
+
         private sealed class NoPatch : IDisposable
         {
             public void Dispose() { }
@@ -74,7 +96,7 @@ namespace StarMap.Core.Patches
         {
             if (!_patches.TryGetValue(method, out var methodPatch))
             {
-                var newPatch = new MethodPatch(_harmony, method);
+                var newPatch = new MethodPatch(_harmony, method, _logger);
                 _patches.Add(method, newPatch);
                 return newPatch;
             }
@@ -93,15 +115,8 @@ namespace StarMap.Core.Patches
             object? instance,
             ref object? result)
         {
-            //var stopwatch = Stopwatch.StartNew();
-
             var outcome = !_patches.TryGetValue(originalMethod, out var methodPatch)
                 || methodPatch.Invoke(type, args, instance, ref result);
-
-            //stopwatch.Stop();
-
-            //Console.WriteLine($"{type} of {originalMethod.Name} took {stopwatch.Elapsed}");
-
 
             return outcome;
         }
@@ -116,28 +131,17 @@ namespace StarMap.Core.Patches
             return _instance?.PatchEntryPoint(HarmonyPatchType.Prefix, __originalMethod, __args, __instance, ref result) ?? true;
         }
 
-        public static HarmonyMethod GetPrefixEntryPoint(Type resultType)
-        {
-            var method = typeof(PatchManager).GetMethod(nameof(PrefixPatchEntryPoint), BindingFlags.Static | BindingFlags.Public)!;
-            return new HarmonyMethod(method.MakeGenericMethod(resultType));
-        }
-
-        public static HarmonyMethod GetPostfixEntryPoint(Type resultType)
-        {
-            var method = typeof(PatchManager).GetMethod(nameof(PostfixPatchEntryPoint), BindingFlags.Static | BindingFlags.Public)!;
-            return new HarmonyMethod(method.MakeGenericMethod(resultType));
-        }
-
-        public static bool PrefixPatchEntryPoint<T>(
+        public static bool PrefixPatchEntryPoint(
             MethodBase __originalMethod,
             object[] __args,
             object? __instance,
             ref object? __result)
         {
-            var result = __result;
-            var outcome = _instance?.PatchEntryPoint(HarmonyPatchType.Prefix, __originalMethod, __args, __instance, ref result) ?? true;
-            __result = IPatchCallback.CastValue<T>(result, nameof(__result));
-            return outcome;
+            var manager = _instance;
+            if (manager is null)
+                return true;
+
+            return manager.PatchEntryPoint(HarmonyPatchType.Prefix, __originalMethod, __args, __instance, ref __result);
         }
 
         public static void PostfixPatchEntryPointVoid(
@@ -150,22 +154,63 @@ namespace StarMap.Core.Patches
             _instance?.PatchEntryPoint(HarmonyPatchType.Postfix, __originalMethod, __args, __instance, ref result);
         }
 
-        public static void PostfixPatchEntryPoint<T>(
+        public static void PostfixPatchEntryPoint(
             MethodBase __originalMethod,
             object[] __args,
             object? __instance,
             ref object? __result)
         {
-            var result = __result;
-            _instance?.PatchEntryPoint(HarmonyPatchType.Postfix, __originalMethod, __args, __instance, ref result);
-            __result = IPatchCallback.CastValue<T>(result, nameof(__result));
+            var manager = _instance;
+            if (manager is null)
+                return;
+
+            manager.PatchEntryPoint(HarmonyPatchType.Postfix, __originalMethod, __args, __instance, ref __result);
         }
 
         public void Dispose()
         {
-            foreach (var patch in _patches)
+            try
             {
-                patch.Value.Dispose();
+                foreach (var patch in _patches.Values.ToArray())
+                {
+                    try
+                    {
+                        patch.Dispose();
+                    }
+                    catch (Exception ex)
+                    {
+                        SafeWarning($"StarMap - Unexpected error while disposing Harmony hooks for '{patch.Method}': {ex}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                SafeWarning($"StarMap - Unexpected error while enumerating Harmony hooks during disposal: {ex}");
+            }
+            finally
+            {
+                try
+                {
+                    _patches.Clear();
+                }
+                catch (Exception ex)
+                {
+                    SafeWarning($"StarMap - Unexpected error while clearing Harmony hooks during disposal: {ex}");
+                }
+
+                if (ReferenceEquals(_instance, this))
+                    _instance = null;
+            }
+        }
+
+        private void SafeWarning(string message)
+        {
+            try
+            {
+                _logger.Warning(message);
+            }
+            catch
+            {
             }
         }
 
@@ -250,18 +295,22 @@ namespace StarMap.Core.Patches
 
             private readonly Harmony _harmony;
             private readonly MethodBase _method;
+            private readonly ILogger _logger;
 
             private MethodInfo? _prefixPatch;
             private MethodInfo? _postfixPatch;
 
-            public MethodPatch(Harmony harmony, MethodBase method)
+            public MethodPatch(Harmony harmony, MethodBase method, ILogger logger)
             {
                 _harmony = harmony;
                 _method = method;
+                _logger = logger;
             }
 
             public IDisposable RegisterPatch(PatchType type, RuntimeMod? mod, IPatchCallback patchCallback, ILogger logger)
             {
+                ValidateTargetReturnType();
+
                 if (patchCallback is IResultCallback resultCallback && GetReturnType() != resultCallback.ResultType)
                 {
                     throw new ArgumentException(
@@ -337,32 +386,32 @@ namespace StarMap.Core.Patches
 
             private void AddPrefix(ModMethodPatch patch)
             {
-                PrefixActions.Add(patch);
-
                 if (_prefixPatch is null)
                 {
                     var returnType = GetReturnType();
                     var prefix = returnType == typeof(void)
                         ? PrefixEntryPointVoid
-                        : GetPrefixEntryPoint(returnType);
+                        : PrefixEntryPointResult;
                     _harmony.Patch(_method, prefix: prefix);
                     _prefixPatch = prefix.method;
                 }
+
+                PrefixActions.Add(patch);
             }
 
             private void AddPostfix(ModMethodPatch patch)
             {
-                PostfixActions.Add(patch);
-
                 if (_postfixPatch is null)
                 {
                     var returnType = GetReturnType();
                     var postfix = returnType == typeof(void)
                         ? PatchManager.PostfixEntryPointVoid
-                        : PatchManager.GetPostfixEntryPoint(returnType);
+                        : PatchManager.PostfixEntryPointResult;
                     _harmony.Patch(_method, postfix: postfix);
                     _postfixPatch = postfix.method;
                 }
+
+                PostfixActions.Add(patch);
             }
 
             private Type GetReturnType()
@@ -370,15 +419,28 @@ namespace StarMap.Core.Patches
                 return _method is MethodInfo methodInfo ? methodInfo.ReturnType : typeof(void);
             }
 
+            private void ValidateTargetReturnType()
+            {
+                if (_method.ContainsGenericParameters)
+                {
+                    throw new NotSupportedException(
+                        $"Open generic target '{_method}' cannot be patched through IPatchService. Supply a closed method instead.");
+                }
+
+                var returnType = GetReturnType();
+                if (returnType.IsByRef || returnType.IsPointer || returnType.IsFunctionPointer || returnType.IsByRefLike)
+                {
+                    throw new NotSupportedException(
+                        $"Target '{_method}' returns '{returnType}', which cannot be passed through the object-based Harmony result dispatcher.");
+                }
+            }
+
             private void RemovePrefix(ModMethodPatch patch)
             {
                 PrefixActions.Remove(patch);
 
                 if (PrefixActions.Count == 0)
-                {
-                    _harmony.Unpatch(_method, _prefixPatch);
-                    _prefixPatch = null;
-                }
+                    TryUnpatch(ref _prefixPatch, "prefix");
             }
 
             private void RemovePostfix(ModMethodPatch patch)
@@ -386,24 +448,69 @@ namespace StarMap.Core.Patches
                 PostfixActions.Remove(patch);
 
                 if (PostfixActions.Count == 0)
-                {
-                    _harmony.Unpatch(_method, _postfixPatch);
-                    _postfixPatch = null;
-                }
+                    TryUnpatch(ref _postfixPatch, "postfix");
             }
 
             public void Dispose()
             {
-                if (PrefixActions.Count > 0)
-                {
-                    _harmony.Unpatch(_method, _prefixPatch);
-                    PrefixActions.Clear();
-                }
+                PrefixActions.Clear();
+                PostfixActions.Clear();
+                TryUnpatch(ref _prefixPatch, "prefix");
+                TryUnpatch(ref _postfixPatch, "postfix");
+            }
 
-                if (PostfixActions.Count > 0)
+            private bool TryUnpatch(ref MethodInfo? patch, string patchType)
+            {
+                var patchMethod = patch;
+                if (patchMethod is null)
+                    return true;
+
+                try
                 {
-                    _harmony.Unpatch(_method, _postfixPatch);
-                    PostfixActions.Clear();
+                    _harmony.Unpatch(_method, patchMethod);
+                    patch = null;
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    SafeWarning(
+                        $"StarMap - Harmony could not remove its {patchType} for '{_method}'. " +
+                        $"The callback has been disabled; the installed dispatcher is inert. " +
+                        $"Harmony patches still registered: {GetPatchSummary()}. Error: {ex}");
+                    return false;
+                }
+            }
+
+            private string GetPatchSummary()
+            {
+                try
+                {
+                    var patchInfo = Harmony.GetPatchInfo(_method);
+                    if (patchInfo is null)
+                        return "(none)";
+
+                    static string Describe(IEnumerable<Patch> patches)
+                    {
+                        var entries = patches.Select(patch => $"{patch.owner}: {patch.PatchMethod}").ToArray();
+                        return entries.Length == 0 ? "(none)" : string.Join(" | ", entries);
+                    }
+
+                    return $"prefixes [{Describe(patchInfo.Prefixes)}]; postfixes [{Describe(patchInfo.Postfixes)}]";
+                }
+                catch (Exception ex)
+                {
+                    return $"(unavailable: {ex.Message})";
+                }
+            }
+
+            private void SafeWarning(string message)
+            {
+                try
+                {
+                    _logger.Warning(message);
+                }
+                catch
+                {
                 }
             }
 
@@ -458,7 +565,16 @@ namespace StarMap.Core.Patches
                 {
                     _patch.UnregisterPatch(this);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    try
+                    {
+                        _logger.Warning($"StarMap - Failed to unregister '{_patchType}' callback for '{_patch.Method}': {ex}");
+                    }
+                    catch
+                    {
+                    }
+                }
 
             }
         }
