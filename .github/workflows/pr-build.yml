@@ -1,7 +1,8 @@
-name: PR build
+name: PR build check
 
 on:
     pull_request:
+        types: [opened, synchronize, labeled, reopened, edited]
         branches: [main]
 
 permissions:
@@ -14,7 +15,7 @@ env:
     NUGET_SOURCE: "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
 
 jobs:
-    build:
+    build-preview:
         runs-on: ubuntu-latest
         timeout-minutes: 30
         steps:
