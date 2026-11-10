@@ -1,52 +1,45 @@
-name: PR Build check
+name: PR build
 
 on:
     pull_request:
-        # Re-run the version calculation when labels are added or when new commits are pushed
-        types: [opened, synchronize, labeled, reopened, edited]
         branches: [main]
 
 permissions:
-    pull-requests: write
     contents: read
     packages: read
 
-jobs:
-    preview-build:
-        # Only run for local PRs
-        if: github.event.pull_request.head.repo.full_name == github.repository
-        runs-on: ubuntu-latest
-        env:
-            DOTNET_VERSION: 10.0
-            PROJECT: StarMap/StarMap.csproj
-            NUGET_SOURCE: "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+env:
+    DOTNET_VERSION: 10.0
+    PROJECT: StarMap/StarMap.csproj
+    NUGET_SOURCE: "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
 
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
         steps:
             - uses: actions/checkout@v4
               with:
-                  fetch-depth: 0
+                  persist-credentials: false
 
             - uses: actions/setup-dotnet@v4
               with:
                   dotnet-version: ${{ env.DOTNET_VERSION }}
 
-            - name: Restore dependencies
+            - name: Configure GitHub Packages
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
-                  dotnet nuget add source --username "${{ secrets.ORG_PACKAGE_USERNAME }}" --password "${{ secrets.ORG_PACKAGE_TOKEN }}" --store-password-in-clear-text --name StarMapGitHubNugetSource "${{ env.NUGET_SOURCE }}"
-                  dotnet restore ${{ env.PROJECT }}
+                  dotnet nuget add source \
+                    --username "$GITHUB_ACTOR" \
+                    --password "$GITHUB_TOKEN" \
+                    --store-password-in-clear-text \
+                    --name StarMapGitHubNugetSource "$NUGET_SOURCE"
 
-            - name: Build
-              run: dotnet build ${{ env.PROJECT }} -c Release
+            - name: Build Release
+              run: dotnet build "$PROJECT" --configuration Release
 
-            # - name: Run tests
-            #   run: dotnet test --no-build --verbosity normal
-
-    docs:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
-
-            - uses: actions/setup-python@v5
+            - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
               with:
                   python-version: "3.12"
 

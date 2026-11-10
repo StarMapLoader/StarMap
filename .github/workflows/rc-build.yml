@@ -4,6 +4,9 @@ on:
     push:
         branches: [main]
 
+permissions:
+    contents: read
+
 env:
     DOTNET_VERSION: 10.0
     PROJECT: StarMap/StarMap.csproj
@@ -15,6 +18,8 @@ env:
 jobs:
     build:
         runs-on: ubuntu-latest
+        permissions:
+            contents: write
         outputs:
             new_version: ${{ steps.version.outputs.new_version }}
             prev_version: ${{ steps.version.outputs.prev_version }}
@@ -65,12 +70,15 @@ jobs:
                   git push origin rc --force
 
             - name: Setup NuGet source
+              env:
+                  ORG_PACKAGE_USERNAME: ${{ secrets.ORG_PACKAGE_USERNAME }}
+                  ORG_PACKAGE_TOKEN: ${{ secrets.ORG_PACKAGE_TOKEN }}
               run: |
                   dotnet nuget add source \
-                    --username ${{ secrets.ORG_PACKAGE_USERNAME }} \
-                    --password ${{ secrets.ORG_PACKAGE_TOKEN }} \
+                    --username "$ORG_PACKAGE_USERNAME" \
+                    --password "$ORG_PACKAGE_TOKEN" \
                     --store-password-in-clear-text \
-                    --name StarMapGitHubNugetSource "${{ env.NUGET_SOURCE }}"
+                    --name StarMapGitHubNugetSource "$NUGET_SOURCE"
 
             - name: Build
               run: |
@@ -99,6 +107,9 @@ jobs:
     publish-RC-nuget:
         runs-on: ubuntu-latest
         needs: build
+        permissions:
+            contents: read
+            packages: write
         steps:
             - uses: actions/checkout@v4
               with:
@@ -115,14 +126,19 @@ jobs:
                   path: ./build_artifacts
 
             - name: Setup NuGet source
+              env:
+                  ORG_PACKAGE_USERNAME: ${{ secrets.ORG_PACKAGE_USERNAME }}
+                  ORG_PACKAGE_TOKEN: ${{ secrets.ORG_PACKAGE_TOKEN }}
               run: |
                   dotnet nuget add source \
-                    --username ${{ secrets.ORG_PACKAGE_USERNAME }} \
-                    --password ${{ secrets.ORG_PACKAGE_TOKEN }} \
+                    --username "$ORG_PACKAGE_USERNAME" \
+                    --password "$ORG_PACKAGE_TOKEN" \
                     --store-password-in-clear-text \
-                    --name StarMapGitHubNugetSource "${{ env.NUGET_SOURCE }}"
+                    --name StarMapGitHubNugetSource "$NUGET_SOURCE"
 
             - name: Pack and push RC NuGet package
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
                   dotnet restore ${{ env.API_PROJECT }}
                   dotnet pack ${{ env.API_PROJECT }} \
@@ -133,12 +149,14 @@ jobs:
                     /p:InformationalVersion=${{ needs.build.outputs.hash_version }}
                   dotnet nuget push ./nupkg/*.nupkg \
                     --source StarMapGitHubNugetSource \
-                    --api-key "${{ secrets.GITHUB_TOKEN }}" \
+                    --api-key "$GITHUB_TOKEN" \
                     --skip-duplicate
 
     release-RC-zip:
         runs-on: ubuntu-latest
         needs: build
+        permissions:
+            contents: write
         steps:
             - uses: actions/checkout@v4
               with:
