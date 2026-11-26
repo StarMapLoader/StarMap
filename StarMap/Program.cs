@@ -6,6 +6,8 @@ namespace StarMap
     {
         static async Task Main(string[] args)
         {
+            // A game restart inherits the game's working directory.
+            Directory.SetCurrentDirectory(AppContext.BaseDirectory);
             var gameConfig = new LoaderConfig();
 
             if (!gameConfig.TryLoadConfig())
